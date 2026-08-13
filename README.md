@@ -118,3 +118,13 @@ rootvector/
 ## License
 
 MIT
+
+---
+
+## Project status
+
+> 🚧 &nbsp;**This project is currently in progress and not fully completed.**
+>
+> **Working:** real authentication (Google · GitHub · email), the authenticated profile, GitHub integration (repositories + live activity), the incident pipeline, the AI investigation agent, the live investigation UI (SSE), human approval, remediation and recovery verification.
+>
+> **Still to do:** full **Sentry** wiring, and the **Kubernetes**, **OpenTelemetry**, **Slack** and **Grafana** integrations (currently scaffolded / *Coming soon*), plus real-time GitHub webhooks. More to come.
