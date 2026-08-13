@@ -45,6 +45,12 @@ flowchart LR
 
 ![Platform architecture](assets/platform-diagram.jpeg)
 
+## Integrations
+
+RootVector uses a provider-based integration framework — connect a tool and it starts feeding real signals into the incident pipeline. **GitHub** is live, **Sentry** is signature-verified and ready, and the rest are scaffolded.
+
+![RootVector integrations](assets/integrations.svg)
+
 ---
 
 ## Screenshots

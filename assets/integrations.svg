@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 500" font-family="ui-sans-serif,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif">
+  <defs>
+    <filter id="sh" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="5" stdDeviation="9" flood-color="#1b1a2e" flood-opacity="0.13"/>
+    </filter>
+    <linearGradient id="hub" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7C6BF0"/><stop offset="1" stop-color="#5B49D6"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="0" y="0" width="940" height="500" rx="22" fill="#FCFBFF"/>
+  <rect x="1" y="1" width="938" height="498" rx="21" fill="none" stroke="#ECEAF6"/>
+
+  <text x="40" y="50" font-size="22" font-weight="700" fill="#161922">Integrations</text>
+  <text x="40" y="74" font-size="13.5" fill="#6B7280">RootVector connects code, deploys and production telemetry.</text>
+
+  <!-- connectors -->
+  <path d="M230 268 C 380 268 410 94 556 94"   fill="none" stroke="#6D5AE6" stroke-width="2.4"/>
+  <path d="M230 268 C 380 268 410 152 556 152" fill="none" stroke="#6D5AE6" stroke-width="2.4"/>
+  <path d="M230 268 C 380 268 410 210 556 210" fill="none" stroke="#D6D3E8" stroke-width="2" stroke-dasharray="2 5"/>
+  <path d="M230 268 C 380 268 410 268 556 268" fill="none" stroke="#D6D3E8" stroke-width="2" stroke-dasharray="2 5"/>
+  <path d="M230 268 C 380 268 410 326 556 326" fill="none" stroke="#D6D3E8" stroke-width="2" stroke-dasharray="2 5"/>
+  <path d="M230 268 C 380 268 410 384 556 384" fill="none" stroke="#D6D3E8" stroke-width="2" stroke-dasharray="2 5"/>
+  <path d="M230 268 C 380 268 410 442 556 442" fill="none" stroke="#D6D3E8" stroke-width="2" stroke-dasharray="2 5"/>
+
+  <!-- hub -->
+  <g filter="url(#sh)"><rect x="70" y="230" width="160" height="76" rx="16" fill="url(#hub)"/></g>
+  <g transform="translate(84,236) scale(0.85)" fill="none" stroke="#fff" stroke-width="2.4">
+    <path d="M25 7C25 16 18 24 8 24C8 15 15 7 25 7Z" stroke-linejoin="round"/>
+    <path d="M11.5 20.5C15 18.5 19 14.5 21.5 10" stroke-linecap="round"/>
+    <circle cx="9.6" cy="22.4" r="1.75" fill="#fff" stroke="none"/>
+  </g>
+  <text x="120" y="263" font-size="15.5" font-weight="700" fill="#fff">rootvector</text>
+  <text x="120" y="281" font-size="10.5" fill="#E7E2FF">AI incident agent</text>
+
+  <!-- chips: icon + name + status. group per row -->
+  <!-- 1 GitHub · Live -->
+  <g filter="url(#sh)"><rect x="560" y="70" width="320" height="48" rx="12" fill="#fff" stroke="#ECECF1"/></g>
+  <rect x="572" y="80" width="28" height="28" rx="8" fill="#24292F"/><text x="586" y="98" font-size="10" font-weight="700" fill="#fff" text-anchor="middle">GH</text>
+  <text x="612" y="99" font-size="14.5" font-weight="600" fill="#161922">GitHub</text>
+  <rect x="796" y="83" width="72" height="22" rx="11" fill="#E7F6EC"/><text x="832" y="98" font-size="11" font-weight="700" fill="#16A34A" text-anchor="middle">Live</text>
+
+  <!-- 2 Sentry · Ready -->
+  <g filter="url(#sh)"><rect x="560" y="128" width="320" height="48" rx="12" fill="#fff" stroke="#ECECF1"/></g>
+  <rect x="572" y="138" width="28" height="28" rx="8" fill="#362D59"/><text x="586" y="156" font-size="10" font-weight="700" fill="#fff" text-anchor="middle">Se</text>
+  <text x="612" y="157" font-size="14.5" font-weight="600" fill="#161922">Sentry</text>
+  <rect x="792" y="141" width="76" height="22" rx="11" fill="#E7EEFC"/><text x="830" y="156" font-size="11" font-weight="700" fill="#2563EB" text-anchor="middle">Ready</text>
+
+  <!-- 3 Datadog · Soon -->
+  <g filter="url(#sh)"><rect x="560" y="186" width="320" height="48" rx="12" fill="#fff" stroke="#ECECF1"/></g>
+  <rect x="572" y="196" width="28" height="28" rx="8" fill="#632CA6"/><text x="586" y="214" font-size="10" font-weight="700" fill="#fff" text-anchor="middle">Dd</text>
+  <text x="612" y="215" font-size="14.5" font-weight="600" fill="#161922">Datadog</text>
+  <rect x="796" y="199" width="72" height="22" rx="11" fill="#F1F1F4"/><text x="832" y="214" font-size="11" font-weight="700" fill="#8A8F9A" text-anchor="middle">Soon</text>
+
+  <!-- 4 Kubernetes · Soon -->
+  <g filter="url(#sh)"><rect x="560" y="244" width="320" height="48" rx="12" fill="#fff" stroke="#ECECF1"/></g>
+  <rect x="572" y="254" width="28" height="28" rx="8" fill="#326CE5"/><text x="586" y="272" font-size="9" font-weight="700" fill="#fff" text-anchor="middle">K8s</text>
+  <text x="612" y="273" font-size="14.5" font-weight="600" fill="#161922">Kubernetes</text>
+  <rect x="796" y="257" width="72" height="22" rx="11" fill="#F1F1F4"/><text x="832" y="272" font-size="11" font-weight="700" fill="#8A8F9A" text-anchor="middle">Soon</text>
+
+  <!-- 5 OpenTelemetry · Soon -->
+  <g filter="url(#sh)"><rect x="560" y="302" width="320" height="48" rx="12" fill="#fff" stroke="#ECECF1"/></g>
+  <rect x="572" y="312" width="28" height="28" rx="8" fill="#E6A817"/><text x="586" y="330" font-size="10" font-weight="700" fill="#fff" text-anchor="middle">OT</text>
+  <text x="612" y="331" font-size="14.5" font-weight="600" fill="#161922">OpenTelemetry</text>
+  <rect x="796" y="315" width="72" height="22" rx="11" fill="#F1F1F4"/><text x="832" y="330" font-size="11" font-weight="700" fill="#8A8F9A" text-anchor="middle">Soon</text>
+
+  <!-- 6 Slack · Soon -->
+  <g filter="url(#sh)"><rect x="560" y="360" width="320" height="48" rx="12" fill="#fff" stroke="#ECECF1"/></g>
+  <rect x="572" y="370" width="28" height="28" rx="8" fill="#4A154B"/><text x="586" y="388" font-size="10" font-weight="700" fill="#fff" text-anchor="middle">Sl</text>
+  <text x="612" y="389" font-size="14.5" font-weight="600" fill="#161922">Slack</text>
+  <rect x="796" y="373" width="72" height="22" rx="11" fill="#F1F1F4"/><text x="832" y="388" font-size="11" font-weight="700" fill="#8A8F9A" text-anchor="middle">Soon</text>
+
+  <!-- 7 Grafana · Soon -->
+  <g filter="url(#sh)"><rect x="560" y="418" width="320" height="48" rx="12" fill="#fff" stroke="#ECECF1"/></g>
+  <rect x="572" y="428" width="28" height="28" rx="8" fill="#F46800"/><text x="586" y="446" font-size="10" font-weight="700" fill="#fff" text-anchor="middle">Gf</text>
+  <text x="612" y="447" font-size="14.5" font-weight="600" fill="#161922">Grafana</text>
+  <rect x="796" y="431" width="72" height="22" rx="11" fill="#F1F1F4"/><text x="832" y="446" font-size="11" font-weight="700" fill="#8A8F9A" text-anchor="middle">Soon</text>
+</svg>
