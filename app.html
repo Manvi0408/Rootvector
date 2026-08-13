@@ -1,0 +1,830 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>RootVector — Production Overview</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M25 7C25 16 18 24 8 24C8 15 15 7 25 7Z' fill='none' stroke='%231B1A17' stroke-width='2'/%3E%3Ccircle cx='9.6' cy='22.4' r='1.9' fill='%231B1A17'/%3E%3C/svg%3E">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0">
+<style>
+:root{
+  --bg:#fff; --panel:#fff; --line:#ECEDF1; --line-2:#F3F3F6; --hover:#F7F7FA;
+  --ink:#161922; --ink-2:#3A3F4C; --muted:#6B7280; --muted-2:#9AA1AD;
+  --violet:#6D5AE6; --violet-ink:#5B49D6; --violet-soft:#EEEBFB; --violet-soft-2:#F5F3FD;
+  --green:#16A34A; --green-soft:#E7F6EC; --red:#DC2626;
+  --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --shadow:0 1px 2px rgba(17,20,28,.04),0 8px 24px -16px rgba(17,20,28,.18);
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font-family:var(--sans);background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;font-size:14px}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;cursor:pointer}
+::-webkit-scrollbar{width:10px;height:10px}::-webkit-scrollbar-thumb{background:#E4E4EA;border-radius:8px;border:3px solid #fff}
+
+/* ---------- top bar ---------- */
+.topbar{height:72px;display:flex;align-items:center;gap:26px;padding:0 26px;border-bottom:1px solid var(--line);position:sticky;top:0;background:rgba(255,255,255,.92);backdrop-filter:saturate(180%) blur(8px);z-index:30}
+.brand{display:flex;align-items:center;gap:9px;font-weight:650;font-size:23px;letter-spacing:-.03em;color:var(--ink)}
+.brand .mk{width:30px;height:30px}
+.topnav{display:flex;gap:28px;align-items:center}
+.topnav a{position:relative;font-size:14.5px;font-weight:500;color:var(--muted);padding:26px 0}
+.topnav a:hover{color:var(--ink)}
+.topnav a.on{color:var(--ink);font-weight:600}
+.topnav a.on::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--violet);border-radius:2px}
+.tb-right{margin-left:auto;display:flex;align-items:center;gap:16px}
+.search{display:flex;align-items:center;gap:9px;width:340px;max-width:32vw;background:#F4F4F7;border:1px solid transparent;border-radius:11px;padding:10px 12px;color:var(--muted)}
+.search svg{width:16px;height:16px}
+.search input{border:0;outline:0;background:transparent;font:inherit;font-size:14px;color:var(--ink);width:100%}
+.search .kbd{margin-left:auto;font-size:12px;color:var(--muted-2);border:1px solid var(--line);border-radius:6px;padding:1px 7px;background:#fff}
+.bell{position:relative;width:40px;height:40px;border-radius:11px;border:1px solid var(--line);background:#fff;display:flex;align-items:center;justify-content:center;color:var(--ink-2)}
+.bell:hover{background:var(--hover)}
+.bell svg{width:18px;height:18px}
+.bell .badge{position:absolute;top:-6px;right:-6px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:var(--violet);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid #fff}
+.acct{display:flex;align-items:center;gap:7px;padding:3px 6px 3px 3px;border-radius:12px;cursor:pointer;position:relative}
+.acct:hover{background:var(--hover)}
+.avatar{width:38px;height:38px;border-radius:50%;overflow:hidden;flex:0 0 auto;display:flex;align-items:center;justify-content:center;background:var(--violet-soft);border:1px solid var(--line);color:var(--muted)}
+.avatar img{width:100%;height:100%;object-fit:cover;display:block}
+.avatar svg{width:20px;height:20px}
+.avatar.lg{width:44px;height:44px}
+.acct .chev{width:16px;height:16px;color:var(--muted-2)}
+.menu{position:absolute;top:52px;right:0;width:262px;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 20px 50px -18px rgba(17,20,28,.38);padding:7px;z-index:50}
+.menu[hidden]{display:none}
+.menu-head{display:flex;align-items:center;gap:11px;padding:11px 10px 13px;border-bottom:1px solid var(--line);margin-bottom:6px}
+.menu-head .nm{font-size:14px;font-weight:650;line-height:1.2}
+.menu-head .em{font-size:12.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:175px}
+.menu-head .pv{font-size:11px;color:var(--muted-2);margin-top:2px;text-transform:capitalize}
+.menu a,.menu button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;font:inherit;font-size:14px;color:var(--ink-2);background:none;border:0;border-radius:9px;padding:10px;cursor:pointer}
+.menu a:hover,.menu button:hover{background:var(--hover);color:var(--ink)}
+.menu .sep{height:1px;background:var(--line);margin:6px 4px}
+.menu .danger:hover{color:var(--red)}
+.menu svg{width:16px;height:16px;color:var(--muted-2)}
+
+/* ---------- shell ---------- */
+.shell{display:grid;grid-template-columns:236px 1fr;min-height:calc(100vh - 72px)}
+.side{border-right:1px solid var(--line);padding:22px 16px;display:flex;flex-direction:column;gap:4px;position:sticky;top:72px;height:calc(100vh - 72px)}
+.side a.nav{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:11px;color:var(--muted);font-size:14.5px;font-weight:500}
+.side a.nav svg{width:19px;height:19px}
+.side a.nav:hover{background:var(--hover);color:var(--ink)}
+.side a.nav.on{background:var(--violet-soft);color:var(--violet-ink);font-weight:600}
+.side .spacer{flex:1}
+.side .agentcard{border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:6px}
+.side .agentcard .t{display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:600}
+.side .agentcard .s{font-size:12px;color:var(--muted);margin-top:3px;padding-left:16px}
+.side .mini{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;color:var(--muted);font-size:13.5px}
+.side .mini:hover{background:var(--hover);color:var(--ink)}
+.side .mini svg{width:17px;height:17px}
+.side .ver{font-size:12px;color:var(--muted-2);padding:8px 12px 0}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--green);flex:0 0 auto;box-shadow:0 0 0 3px var(--green-soft)}
+.dot.violet{background:var(--violet);box-shadow:0 0 0 3px var(--violet-soft)}
+
+/* ---------- main ---------- */
+.main{padding:34px 40px 60px;max-width:1360px}
+.h1{font-size:38px;font-weight:750;letter-spacing:-.02em;margin:0}
+.statusline{display:flex;align-items:center;gap:9px;color:var(--muted);font-size:15px;margin:14px 0 26px}
+
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-bottom:22px}
+.kpi{border:1px solid var(--line);border-radius:16px;padding:20px;display:flex;align-items:center;gap:16px;background:var(--panel);box-shadow:var(--shadow)}
+.kpi .tile{width:52px;height:52px;border-radius:13px;background:var(--violet-soft);display:flex;align-items:center;justify-content:center;color:var(--violet);flex:0 0 auto}
+.kpi .tile svg{width:24px;height:24px}
+.kpi .v{font-size:30px;font-weight:750;line-height:1}
+.kpi .l{font-size:13.5px;color:var(--muted);margin-top:5px}
+
+.row3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-bottom:22px}
+.card{border:1px solid var(--line);border-radius:16px;background:var(--panel);box-shadow:var(--shadow);padding:20px 20px}
+.card-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.card-h h3{font-size:16px;font-weight:650;margin:0;display:flex;align-items:center;gap:7px}
+.card-h .info{width:15px;height:15px;color:var(--muted-2)}
+.viewall{font-size:13px;font-weight:600;color:var(--violet);display:flex;align-items:center;gap:4px}
+.viewall:hover{color:var(--violet-ink)}
+
+.agent-status{display:flex;align-items:center;gap:9px;font-size:14px;font-weight:500;color:var(--ink-2);margin-bottom:20px}
+.brands{display:flex;align-items:center;gap:20px;justify-content:flex-start;padding:6px 0 4px}
+.brands .b{width:34px;height:34px;display:flex;align-items:center;justify-content:center}
+.brands .b svg{width:28px;height:28px}
+.brands-cap{font-size:13px;color:var(--muted);margin-top:8px}
+.agent-foot{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13px;margin-top:22px}
+.agent-foot svg{width:15px;height:15px}
+
+.act{display:flex;align-items:center;gap:13px;padding:13px 4px;border-top:1px solid var(--line-2)}
+.act:first-of-type{border-top:0;padding-top:2px}
+.act .ic{width:38px;height:38px;border-radius:10px;background:var(--hover);display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+.act .ic svg{width:19px;height:19px}
+.act .m{flex:1;min-width:0}
+.act .m .tt{font-size:14px;font-weight:600}
+.act .m .sub{font-size:13px;color:var(--muted)}
+.act .time{font-size:12.5px;color:var(--muted-2);white-space:nowrap}
+
+.empty{display:flex;flex-direction:column;align-items:center;text-align:center;padding:14px 6px 6px}
+.empty .orb{width:88px;height:88px;border-radius:50%;background:radial-gradient(circle at 50% 42%,var(--violet-soft),var(--violet-soft-2));display:flex;align-items:center;justify-content:center;color:var(--violet);margin-bottom:16px;position:relative}
+.empty .orb svg{width:34px;height:34px}
+.empty .spark{position:absolute;color:var(--violet);opacity:.5}
+.empty h4{font-size:15.5px;font-weight:650;margin:0 0 6px}
+.empty p{font-size:13.5px;color:var(--muted);margin:0 0 16px;max-width:34ch;line-height:1.5}
+.btn-outline{border:1px solid var(--line);background:#fff;border-radius:10px;padding:10px 16px;font-size:13.5px;font-weight:600;color:var(--ink)}
+.btn-outline:hover{background:var(--hover);border-color:#DDD}
+
+.health{border:1px solid var(--line);border-radius:16px;background:var(--panel);box-shadow:var(--shadow);padding:22px 24px}
+.health-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.health-h h3{font-size:17px;font-weight:650;margin:0}
+.tbl{width:100%;border-collapse:collapse}
+.tbl th{text-align:left;font-size:12.5px;font-weight:600;color:var(--muted);padding:14px 10px;border-bottom:1px solid var(--line)}
+.tbl td{padding:16px 10px;border-bottom:1px solid var(--line-2);font-size:14px;vertical-align:middle}
+.tbl tr:last-child td{border-bottom:0}
+.svc{display:flex;align-items:center;gap:10px;font-weight:600}
+.svc svg{width:18px;height:18px;color:var(--muted)}
+.badge-h{display:inline-flex;align-items:center;gap:7px;color:var(--green);font-weight:600}
+.spark{display:block}
+.tbl-foot{text-align:center;color:var(--muted);font-size:13px;padding-top:16px;display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer}
+.tbl-foot svg{width:14px;height:14px}
+.muted{color:var(--muted);font-size:14px;padding:20px 2px}
+.tag{font-size:11px;font-weight:600;color:var(--muted);background:var(--hover);border:1px solid var(--line);border-radius:6px;padding:1px 7px;margin-left:6px}
+.btn-primary{border:0;border-radius:10px;background:var(--violet);color:#fff;padding:10px 16px;font-size:13.5px;font-weight:600}
+.btn-primary:hover{background:var(--violet-ink)}
+.int-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.int-card{border:1px solid var(--line);border-radius:16px;background:#fff;box-shadow:var(--shadow);padding:20px;display:flex;flex-direction:column;gap:16px}
+.int-top{display:flex;align-items:flex-start;gap:12px}
+.int-logo{width:40px;height:40px;flex:0 0 auto;display:flex;align-items:center;justify-content:center}
+.int-logo svg{width:30px;height:30px}
+.int-name{font-size:15.5px;font-weight:650}
+.int-blurb{font-size:12.5px;color:var(--muted);margin-top:2px}
+.int-badge{margin-left:auto;font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:20px}
+.int-badge.on{color:var(--green);background:var(--green-soft)}
+.int-foot{margin-top:auto;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.int-sub{font-size:13px;color:var(--muted)}
+.int-soon{font-size:12.5px;color:var(--muted-2)}
+@media(max-width:1080px){.int-grid{grid-template-columns:1fr}}
+/* ---- investigation ---- */
+.backlink{display:inline-block;font-size:13.5px;color:var(--muted);margin-bottom:12px}
+.backlink:hover{color:var(--ink)}
+.inv-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px}
+.sev{font-size:12px;font-weight:800;border-radius:6px;padding:3px 8px;letter-spacing:.03em}
+.sev1{background:#FDECEC;color:#DC2626}.sev2{background:#FEF3E2;color:#C77A0A}.sev3{background:var(--violet-soft);color:var(--violet-ink)}
+.inv-grid{display:grid;grid-template-columns:1.35fr 1fr;gap:18px;align-items:start}
+.agent-live{font-size:13px;font-weight:600;color:var(--violet-ink);display:flex;align-items:center;gap:7px}
+.agent-live.done{color:var(--green)}
+.timeline{padding-left:2px}
+.tl-row{display:flex;gap:12px;padding:9px 0;align-items:flex-start;animation:tlIn .3s ease}
+@keyframes tlIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.tl-time{font:12px/1.5 var(--mono,ui-monospace,monospace);color:var(--muted-2);width:58px;flex:0 0 auto}
+.tl-ic{width:22px;height:22px;border-radius:50%;flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700}
+.tl-ic.ok{background:var(--green-soft);color:var(--green)}
+.tl-ic.run{background:var(--violet-soft);color:var(--violet)}
+.tl-ic.warn{background:#FDECEC;color:#DC2626}
+.tl-msg{font-size:14px;color:var(--ink-2);padding-top:1px}
+.inv-side{display:flex;flex-direction:column;gap:18px}
+.hy{margin-bottom:13px}
+.hy-top{display:flex;justify-content:space-between;font-size:13.5px;margin-bottom:5px}
+.hy-top b{font-weight:600}.hy-top .p{font-weight:700}
+.hy-bar{height:7px;border-radius:6px;background:var(--panel-2);overflow:hidden}
+.hy-bar i{display:block;height:100%;border-radius:6px;background:#C9C3E8;transition:width .5s}
+.hy.lead .hy-bar i{background:var(--violet)}
+.hy.lead .hy-top .p{color:var(--violet-ink)}
+.hy-sub{font-size:12px;color:var(--muted);margin-top:4px}
+.conf{margin-left:auto;font-size:12px;font-weight:700;color:var(--green);background:var(--green-soft);padding:3px 10px;border-radius:20px}
+.why{list-style:none;margin:0;padding:0}
+.why li{display:flex;gap:8px;font-size:13.5px;color:var(--ink-2);padding:5px 0}
+.why li::before{content:"✓";color:var(--green);font-weight:800}
+.rec-box{border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:14px}
+.rec-box .a{font-size:16px;font-weight:650}
+.rec-box .m{font-size:13px;color:var(--muted);margin-top:4px}
+.rec-tags{display:flex;gap:8px;margin-top:10px}
+.rec-tags span{font-size:12px;font-weight:600;border-radius:20px;padding:3px 10px;background:var(--green-soft);color:var(--green)}
+.inv-actions{display:flex;gap:10px}
+.btn-approve{border:0;border-radius:11px;background:var(--violet);color:#fff;font-weight:600;font-size:14px;padding:12px 18px;flex:1;cursor:pointer}
+.btn-approve:hover{background:var(--violet-ink)}
+.btn-approve[disabled]{opacity:.6;cursor:default}
+.btn-reject{border:1px solid var(--line);border-radius:11px;background:#fff;padding:12px 18px;font-weight:600;font-size:14px}
+.verified{border:1px solid #BBF7D0;background:#F0FDF4}
+.verified .vok{font-size:18px;font-weight:750;color:var(--green);letter-spacing:.02em}
+.modal-ov{position:fixed;inset:0;background:rgba(20,22,28,.42);display:flex;align-items:center;justify-content:center;z-index:80}
+.modal{background:#fff;border-radius:16px;padding:24px;width:420px;max-width:92vw;box-shadow:0 30px 70px -20px rgba(0,0,0,.4)}
+.modal h3{margin:0 0 6px;font-size:18px}
+.modal p{margin:0 0 4px;font-size:14px;color:var(--muted)}
+.modal .kv{font-size:14px;margin:12px 0}.modal .kv b{font-weight:650}
+.modal-act{display:flex;gap:10px;margin-top:20px}
+.kvrow{display:flex;justify-content:space-between;padding:11px 0;border-top:1px solid var(--line-2);font-size:14px}
+.kvrow span{color:var(--muted)}.kvrow b{font-weight:600}
+.sep2{height:1px;background:var(--line);margin:16px 0}
+.cmdk-row{padding:11px 12px;border-radius:9px;cursor:pointer}
+.cmdk-row:hover{background:var(--hover)}
+.notif-item{display:flex;gap:11px;padding:10px;border-radius:9px}
+.notif-item:hover{background:var(--hover)}
+.notif-item .ic{width:30px;height:30px;border-radius:8px;background:var(--hover);display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+.notif-item .ic svg{width:16px;height:16px}
+@media(max-width:960px){.inv-grid{grid-template-columns:1fr}}
+
+@media(max-width:1080px){.kpis{grid-template-columns:repeat(2,1fr)}.row3{grid-template-columns:1fr}.topnav{display:none}}
+@media(max-width:720px){.shell{grid-template-columns:1fr}.side{display:none}.kpis{grid-template-columns:1fr}.main{padding:24px 18px 50px}.search{display:none}}
+</style>
+</head>
+<body>
+
+<!-- ===== top bar ===== -->
+<header class="topbar">
+  <a class="brand" href="index.html" title="Back to rootvector.ai">
+    <svg class="mk" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+      <path d="M25 7C25 16 18 24 8 24C8 15 15 7 25 7Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M11.5 20.5C15 18.5 19 14.5 21.5 10" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+      <circle cx="9.6" cy="22.4" r="1.75" fill="currentColor"/>
+    </svg>
+    <b>rootvector</b>
+  </a>
+  <nav class="topnav" id="topnav">
+    <a href="#/overview">Overview</a>
+    <a href="#/investigations">Investigations</a>
+    <a href="#/services">Services</a>
+    <a href="#/repositories">Repositories</a>
+    <a href="#/integrations">Integrations</a>
+  </nav>
+  <div class="tb-right">
+    <div class="search" onclick="openPalette()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><input placeholder="Search anything…" readonly><span class="kbd">⌘K</span></div>
+    <button class="bell" id="bell" aria-label="Notifications" onclick="toggleNotif(event)"><span class="badge" id="bellBadge" hidden>0</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></button>
+    <div class="acct" id="acct" onclick="rvToggleMenu(event)">
+      <span class="avatar" id="rvAvatar"></span>
+      <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+    </div>
+    <div class="menu" id="rvMenu" hidden>
+      <div class="menu-head">
+        <span class="avatar lg" id="rvAvatar2"></span>
+        <div style="min-width:0">
+          <div class="nm" id="rvName">Account</div>
+          <div class="em" id="rvEmail"></div>
+          <div class="pv" id="rvProv"></div>
+        </div>
+      </div>
+      <a href="#/account" onclick="rvCloseMenu()">Account</a>
+      <a href="#/settings" onclick="rvCloseMenu()">Settings</a>
+      <a href="#/integrations" onclick="rvCloseMenu()">Integrations</a>
+      <div class="sep"></div>
+      <button type="button" class="danger" onclick="rvSignOut()">Sign out</button>
+    </div>
+  </div>
+</header>
+
+<!-- ===== shell ===== -->
+<div class="shell">
+  <aside class="side" id="side">
+    <a class="nav" href="#/overview" data-k="overview"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9 21v-6h6v6"/></svg>Overview</a>
+    <a class="nav" href="#/investigations" data-k="investigations"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>Investigations</a>
+    <a class="nav" href="#/services" data-k="services"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg>Services</a>
+    <a class="nav" href="#/repositories" data-k="repositories"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4v14a2 2 0 0 0 2 2h14"/><rect x="8" y="3" width="12" height="12" rx="2"/></svg>Repositories</a>
+    <a class="nav" href="#/integrations" data-k="integrations"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 7 3 12l5 5M16 7l5 5-5 5M13 4l-2 16"/></svg>Integrations</a>
+    <div class="spacer"></div>
+    <div class="agentcard">
+      <div class="t"><span class="dot violet"></span>RootVector Agent</div>
+      <div class="s">All systems operational</div>
+    </div>
+    <a class="mini" href="#" onclick="feedbackModal();return false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Give feedback</a>
+    <a class="mini" href="#/settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2 2 2 0 1 1-4 0 1.7 1.7 0 0 0-2.9-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 2.6 15a2 2 0 1 1 0-4 1.7 1.7 0 0 0 1.2-2.9l-.1-.1A2 2 0 1 1 6.5 5.2l.1.1A1.7 1.7 0 0 0 9 4.6a2 2 0 1 1 4 0 1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1A1.7 1.7 0 0 0 21.4 11a2 2 0 1 1 0 4z"/></svg>Settings</a>
+    <div class="ver">RootVector v1.0.0</div>
+  </aside>
+
+  <main class="main" id="main"></main>
+</div>
+
+<script>
+const RV_API = "http://localhost:4000/api";
+let RV_USER = null;
+const $ = id => document.getElementById(id);
+
+/* ---------- brand + status icons ---------- */
+const ICN = {
+  cube:'<path d="M21 16V8a2 2 0 0 0-1-1.7l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.7l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="m3.3 7 8.7 5 8.7-5M12 22V12"/>',
+  shield:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
+  rocket:'<path d="M4.5 16.5c-1.5 1.3-2 5-2 5s3.7-.5 5-2c.7-.9.7-2.2-.1-3a2.1 2.1 0 0 0-2.9 0zM12 15l-3-3a22 22 0 0 1 10-11 22 22 0 0 1-1 10z"/><path d="M9 12H4s.5-2.8 2-4a4 4 0 0 1 3 0M12 15v5s2.8-.5 4-2a4 4 0 0 0 0-3"/>',
+  bell:'<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/>',
+  clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  xcircle:'<circle cx="12" cy="12" r="9"/><path d="m15 9-6 6M9 9l6 6"/>',
+  search:'<circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>',
+  info:'<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'
+};
+const B = {
+  github:'<svg viewBox="0 0 24 24"><path fill="#181717" d="M12 .5A11.5 11.5 0 0 0 .5 12a11.5 11.5 0 0 0 7.9 10.9c.6.1.8-.2.8-.5v-2c-3.2.7-3.9-1.4-3.9-1.4-.5-1.3-1.3-1.7-1.3-1.7-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.7 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.2 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0C17.3 5 18.3 5.3 18.3 5.3c.7 1.7.3 2.9.1 3.2.8.8 1.2 1.8 1.2 3.1 0 4.4-2.7 5.4-5.3 5.7.4.4.8 1.1.8 2.2v3.3c0 .3.2.6.8.5A11.5 11.5 0 0 0 23.5 12 11.5 11.5 0 0 0 12 .5Z"/></svg>',
+  sentry:'<svg viewBox="0 0 24 24" fill="none"><path d="M13.3 3.6a1.5 1.5 0 0 0-2.6 0L7.9 8.4a10.5 10.5 0 0 1 5.6 8.6h-2a8.5 8.5 0 0 0-4.6-7L5 12.7a6 6 0 0 1 3 4.3H4.2c-.4 0-.6-.4-.4-.7l1.5-2.6a4.4 4.4 0 0 0-1.3-.8l-1.5 2.6A2 2 0 0 0 4.2 19h6.3a8 8 0 0 0-3.8-8l1-1.7a10 10 0 0 1 4.8 9.7h4.4c1.1 0 2-1.3 1.4-2.4L13.3 3.6Z" fill="#362D59"/></svg>',
+  deploy:'<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#EEEBFB"/><path d="M8 12h8M13 9l3 3-3 3" stroke="#6D5AE6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+};
+const svg = (p,cls) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" ${cls?`class="${cls}"`:''}>${p}</svg>`;
+function sparkline(pts,color){
+  const w=110,h=30, xs=w/(pts.length-1);
+  const min=Math.min(...pts),max=Math.max(...pts),rng=(max-min)||1;
+  const d=pts.map((v,i)=>`${i?'L':'M'}${(i*xs).toFixed(1)} ${(h-((v-min)/rng)*(h-6)-3).toFixed(1)}`).join(' ');
+  return `<svg class="spark" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" fill="none"><path d="${d}" stroke="${color||'#6D5AE6'}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+}
+
+/* ---------- pages ---------- */
+function pageOverview(){
+  setTimeout(loadOverview,0);
+  return `
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap">
+    <div>
+      <h1 class="h1">Production Overview</h1>
+      <div class="statusline"><span class="dot" id="ovDot"></span> <span id="ovStatus">Loading…</span></div>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn-outline" onclick="clearDemo(this)" title="Remove demo incidents + seeded activity">Clear demo data</button>
+      <button class="btn-outline" onclick="simulateIncident(this)" title="Runs the real incident pipeline (demo)">⚡ Simulate incident</button>
+    </div>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi"><span class="tile">${svg(ICN.cube)}</span><div><div class="v" id="kServices">—</div><div class="l">Services monitored</div></div></div>
+    <div class="kpi"><span class="tile">${svg(ICN.shield)}</span><div><div class="v" id="kActive">—</div><div class="l">Active incidents</div></div></div>
+    <div class="kpi"><span class="tile">${svg(ICN.rocket)}</span><div><div class="v" id="kDeploys">—</div><div class="l">Recent deployments</div></div></div>
+    <div class="kpi"><span class="tile">${svg(ICN.bell)}</span><div><div class="v" id="kAlerts">—</div><div class="l">Alerts analyzed</div></div></div>
+  </div>
+
+  <div class="row3">
+    <div class="card">
+      <div class="card-h"><h3>RootVector Agent</h3><span class="info">${svg(ICN.info)}</span></div>
+      <div class="agent-status"><span class="dot violet"></span> Monitoring your connected systems</div>
+      <div class="brands"><span class="b">${B.github}</span><span class="b">${B.sentry}</span><span class="b">${B.deploy}</span></div>
+      <div class="brands-cap">GitHub · Sentry · Deployments</div>
+      <div class="agent-foot">${svg(ICN.clock)} <span id="agentLast">Waiting for connected systems…</span></div>
+    </div>
+
+    <div class="card">
+      <div class="card-h"><h3>Recent Activity</h3><a class="viewall" href="#/investigations">View all →</a></div>
+      <div id="ovActivity"><div class="muted" style="padding:8px 2px">Loading…</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-h"><h3>Recent Investigations</h3><span class="info">${svg(ICN.info)}</span></div>
+      <div id="ovInvest"></div>
+    </div>
+  </div>
+
+  <div class="health">
+    <div class="health-h"><h3>System Health</h3><a class="viewall" href="#/services">View all services →</a></div>
+    <div id="ovHealth"><div class="muted">Loading…</div></div>
+  </div>`;
+}
+
+function actIcon(kind){
+  if(kind==='pr_merged'||kind==='push') return `<span class="ic">${B.github}</span>`;
+  if(kind==='deployment') return `<span class="ic" style="color:#6D5AE6">${svg(ICN.rocket)}</span>`;
+  if(kind==='error') return `<span class="ic" style="color:#DC2626">${svg(ICN.xcircle)}</span>`;
+  return `<span class="ic">${svg(ICN.info)}</span>`;
+}
+async function loadOverview(){
+  let d; try{ d=await (await rvApi('/overview')).json(); }catch(e){ return; }
+  const S=d.stats||{}; const set=(id,v)=>{const el=document.getElementById(id); if(el) el.textContent=v;};
+  set('kServices',S.servicesMonitored); set('kActive',S.activeIncidents);
+  set('kDeploys',S.recentDeployments); set('kAlerts',S.alertsAnalyzed);
+  const bb=$('bellBadge'); if(bb){ bb.textContent=S.activeIncidents||0; bb.hidden=(S.activeIncidents||0)===0; }
+
+  const dot=document.getElementById('ovDot'), st=document.getElementById('ovStatus');
+  if(S.activeIncidents>0){ if(dot){dot.style.background='#DC2626';dot.style.boxShadow='0 0 0 3px rgba(220,38,38,.15)';} if(st) st.textContent=S.activeIncidents+' active incident'+(S.activeIncidents>1?'s':''); }
+  else if(st){ st.textContent='All systems operational'; }
+
+  const av=document.getElementById('ovActivity');
+  if(av){
+    if(!d.activity.length){ av.innerHTML='<div class="muted" style="padding:8px 2px">No recent activity yet — connect GitHub or simulate an incident.</div>'; }
+    else{
+      av.innerHTML=d.activity.map(a=>`<div class="act">${actIcon(a.kind)}<div class="m"><div class="tt">${a.title}</div><div class="sub">${a.service||''}</div></div><div class="time">${timeAgo(a.at)}</div></div>`).join('');
+      const al=document.getElementById('agentLast'); if(al) al.textContent='Last activity: '+timeAgo(d.activity[0].at);
+    }
+  }
+
+  const iv=document.getElementById('ovInvest');
+  if(iv){
+    if(!d.activeIncidents.length){
+      iv.innerHTML=`<div class="empty"><div class="orb">${svg(ICN.search)}</div><h4>No active investigations</h4><p>You're all caught up. When RootVector investigates incidents, they'll appear here.</p><a class="btn-outline" href="#/investigations">View investigations</a></div>`;
+    }else{
+      iv.innerHTML=d.activeIncidents.map(i=>`<div class="act" style="cursor:pointer" onclick="location.hash='#/investigations/${i.key}'"><span class="ic" style="color:#DC2626">${svg(ICN.xcircle)}</span><div class="m"><div class="tt">${i.title} ${i.isDemo?'<span class="tag">DEMO</span>':''}</div><div class="sub">${i.key} · SEV${i.severity} · ${i.service} · <span style="color:var(--violet-ink);font-weight:600">View investigation →</span></div></div><div class="time">${i.confidence?i.confidence+'%':'investigating'}</div></div>`).join('');
+    }
+  }
+
+  const hv=document.getElementById('ovHealth');
+  if(hv){
+    const degraded=new Set(d.activeIncidents.map(i=>i.service));
+    const names=[...new Set([...d.activeIncidents.map(i=>i.service), ...d.activity.map(a=>a.service).filter(Boolean)])];
+    if(!names.length){ hv.innerHTML=`<div class="empty" style="padding:30px 6px"><div class="orb">${svg(ICN.cube)}</div><h4>No services connected yet</h4><p>Connect GitHub and monitoring to start tracking service health.</p><a class="btn-outline" href="#/integrations">Connect your stack</a></div>`; }
+    else{
+      hv.innerHTML=`<table class="tbl"><thead><tr><th>Service</th><th>Status</th><th>Alerts</th></tr></thead><tbody>${names.map(n=>{const bad=degraded.has(n);return `<tr><td><div class="svc">${svg(ICN.cube)} ${n}</div></td><td>${bad?'<span class="badge-h" style="color:#DC2626"><span class="dot" style="background:#DC2626;box-shadow:0 0 0 3px rgba(220,38,38,.15)"></span>Degraded</span>':'<span class="badge-h"><span class="dot"></span>Healthy</span>'}</td><td>${bad?1:0}</td></tr>`;}).join('')}</tbody></table>`;
+    }
+  }
+}
+async function simulateIncident(btn){
+  if(btn){ btn.disabled=true; btn.textContent='Simulating…'; }
+  try{ await rvApi('/dev/simulate-incident',{method:'POST'}); }catch(e){}
+  if(btn){ btn.disabled=false; btn.textContent='⚡ Simulate incident'; }
+  if(currentKey()==='overview') loadOverview(); else location.hash='#/overview';
+}
+async function clearDemo(btn){
+  if(btn){ btn.disabled=true; btn.textContent='Clearing…'; }
+  try{ await rvApi('/dev/reset-demo',{method:'POST'}); }catch(e){}
+  if(btn){ btn.disabled=false; btn.textContent='Clear demo data'; }
+  loadOverview();
+}
+
+function pageEmpty(title, icon, head, body, cta){
+  return `
+  <h1 class="h1">${title}</h1>
+  <div class="statusline"><span class="dot"></span> All systems operational</div>
+  <div class="health"><div class="empty" style="padding:40px 6px">
+    <div class="orb">${svg(icon)}</div>
+    <h4>${head}</h4>
+    <p>${body}</p>
+    ${cta||''}
+  </div></div>`;
+}
+
+async function rvApi(path, opts){ return fetch(RV_API + path, Object.assign({credentials:'include'}, opts||{})); }
+function timeAgo(iso){ if(!iso) return '—'; const s=(Date.now()-new Date(iso).getTime())/1000; const d=Math.floor(s/86400); if(d>0)return d+'d ago'; const h=Math.floor(s/3600); if(h>0)return h+'h ago'; const m=Math.floor(s/60); return (m||1)+'m ago'; }
+
+/* ---- Integrations (real) ---- */
+function pageIntegrations(){
+  setTimeout(loadIntegrations,0);
+  return `<h1 class="h1">Integrations</h1>
+  <div class="statusline"><span class="dot"></span> Connect your engineering stack</div>
+  <div id="intList" class="int-grid"><div class="muted">Loading integrations…</div></div>`;
+}
+async function loadIntegrations(){
+  const el=document.getElementById('intList'); if(!el) return;
+  try{
+    const list=await (await rvApi('/integrations')).json();
+    el.innerHTML=list.map(p=>{
+      const connected=p.status==='connected';
+      const brand=p.key==='github'?B.github:p.key==='sentry'?B.sentry:svg(ICN.cube);
+      let foot;
+      if(p.key==='sentry'){
+        foot = connected
+          ? `<span class="int-sub">Webhook configured${p.lastEventAt?' · last event '+timeAgo(p.lastEventAt):' · waiting for events'}</span>`
+          : `<button class="btn-primary" onclick="sentrySetup()">Set up Sentry</button>`;
+      } else if(connected){
+        foot = `<span class="int-sub">${p.externalLogin?('@'+p.externalLogin):'Connected'}</span><button class="btn-outline" onclick="disconnectGithub()">Disconnect</button>`;
+      } else if(p.available){
+        foot = `<button class="btn-primary" onclick="connectProvider('${p.key}')">Connect ${p.name}</button>`;
+      } else {
+        foot = `<span class="int-soon">Coming soon</span>`;
+      }
+      return `<div class="int-card"><div class="int-top"><span class="int-logo">${brand}</span>
+        <div><div class="int-name">${p.name}</div><div class="int-blurb">${p.blurb}</div></div>
+        ${connected?'<span class="int-badge on">Connected</span>':''}</div>
+        <div class="int-foot">${foot}</div></div>`;
+    }).join('');
+  }catch(e){ el.innerHTML='<div class="muted">Could not load integrations.</div>'; }
+}
+function connectProvider(key){ if(key==='github') location.href=RV_API+'/integrations/github/connect'; }
+async function disconnectGithub(){ try{ await rvApi('/integrations/github/disconnect',{method:'POST'}); }catch(e){} loadIntegrations(); }
+function sentrySetup(){
+  const ov=document.createElement('div'); ov.className='modal-ov'; ov.id='sentryModal';
+  ov.innerHTML=`<div class="modal" style="width:520px">
+    <h3>Connect Sentry</h3>
+    <p>Sentry sends signed webhooks when a real error fires. RootVector opens an incident and investigates it automatically.</p>
+    <ol style="font-size:13.5px;color:var(--ink-2);line-height:1.7;padding-left:18px;margin:14px 0">
+      <li>Expose your backend publicly: <code style="background:var(--hover);padding:1px 6px;border-radius:5px">ngrok http 4000</code></li>
+      <li>In Sentry → <b>Settings → Developer Settings → New Internal Integration</b>. Enable <b>Webhooks</b>.</li>
+      <li>Webhook URL: <code style="background:var(--hover);padding:1px 6px;border-radius:5px">https://&lt;your-ngrok&gt;/api/webhooks/sentry</code></li>
+      <li>Subscribe to <b>issue</b> and <b>error</b> (and alert rules).</li>
+      <li>Copy the integration's <b>Client Secret</b> into <code style="background:var(--hover);padding:1px 6px;border-radius:5px">server/.env → SENTRY_CLIENT_SECRET</code> and restart.</li>
+    </ol>
+    <p style="font-size:12.5px;color:var(--muted-2)">Every delivery is HMAC-verified server-side; the secret never touches the browser.</p>
+    <div class="modal-act"><button class="btn-approve" style="flex:1" onclick="document.getElementById('sentryModal').remove()">Got it</button></div>
+  </div>`;
+  ov.addEventListener('click', e=>{ if(e.target===ov) ov.remove(); });
+  document.body.appendChild(ov);
+}
+
+/* ---- Repositories (real GitHub) ---- */
+function pageRepositories(){
+  setTimeout(loadRepos,0);
+  return `<h1 class="h1">Repositories</h1>
+  <div class="statusline"><span class="dot"></span> From your connected GitHub</div>
+  <div id="repoList"><div class="muted">Loading repositories…</div></div>`;
+}
+async function loadRepos(){
+  const el=document.getElementById('repoList'); if(!el) return;
+  const r=await rvApi('/github/repositories');
+  if(r.status===400 || r.status===401){
+    el.innerHTML=`<div class="health"><div class="empty" style="padding:40px 6px">
+      <div class="orb">${B.github}</div><h4>Connect GitHub</h4>
+      <p>Connect your GitHub account to see your real repositories, pull requests and deployments.</p>
+      <a class="btn-outline" href="#/integrations">Go to Integrations</a></div></div>`; return;
+  }
+  const repos=await r.json();
+  if(!Array.isArray(repos) || !repos.length){ el.innerHTML='<div class="muted">No repositories found on this account.</div>'; return; }
+  el.innerHTML=`<div class="health"><table class="tbl">
+    <thead><tr><th>Repository</th><th>Language</th><th>Open issues</th><th>Updated</th></tr></thead>
+    <tbody>${repos.map(x=>`<tr>
+      <td><div class="svc">${B.github}<a href="${x.url}" target="_blank" rel="noreferrer">${x.fullName}</a>${x.private?'<span class="tag">private</span>':''}</div></td>
+      <td>${x.language||'—'}</td><td>${x.openIssues??0}</td><td>${timeAgo(x.pushedAt)}</td></tr>`).join('')}
+    </tbody></table></div>`;
+}
+
+const PAGES = {
+  overview: pageOverview,
+  investigations: () => pageInvestigationsList(),
+  services: () => pageEmpty('Services', ICN.cube, 'No services connected yet',
+    "Connect GitHub and monitoring to start tracking service health.",
+    '<a class="btn-outline" href="#/integrations">Connect your stack</a>'),
+  repositories: pageRepositories,
+  integrations: pageIntegrations,
+  settings: pageSettings,
+  account: pageSettings
+};
+
+/* ---------- router ---------- */
+let rvES = null;
+function closeStream(){ if(rvES){ try{ rvES.close(); }catch(e){} rvES=null; } }
+function currentKey(){ return (location.hash.replace('#/','').split('/')[0]) || 'overview'; }
+function route(){
+  closeStream();
+  const parts = location.hash.replace('#/','').split('/');
+  const k = parts[0] || 'overview';
+  const navKey = (k==='investigations') ? 'investigations' : (PAGES[k] ? k : 'overview');
+  document.querySelectorAll('.topnav a').forEach(a=>a.classList.toggle('on', a.getAttribute('href')==='#/'+navKey));
+  document.querySelectorAll('.side a.nav').forEach(a=>a.classList.toggle('on', a.dataset.k===navKey));
+  if(k==='investigations' && parts[1]){ $('main').innerHTML = pageInvestigation(parts[1]); window.scrollTo(0,0); return; }
+  $('main').innerHTML = (PAGES[k] || PAGES.overview)();
+  window.scrollTo(0,0);
+}
+window.addEventListener('hashchange', route);
+
+/* ---------- live investigation (SSE) ---------- */
+const invSeen = new Set();
+let invRec = null; // remembered recommendation for the confirm modal
+function tlTime(iso){ return new Date(iso).toLocaleTimeString([], {hour12:false}); }
+function pageInvestigation(key){
+  invSeen.clear(); invRec = null;
+  setTimeout(()=>initInvestigation(key), 0);
+  return `
+  <a class="backlink" href="#/overview">← Overview</a>
+  <div class="inv-head" id="invHead"><h1 class="h1" style="font-size:30px">Investigation</h1><span class="muted">${key}</span></div>
+  <div class="inv-grid">
+    <div class="card">
+      <div class="card-h"><h3>RootVector Agent</h3><span class="agent-live" id="invStatus"><span class="dot violet"></span> Investigation in progress</span></div>
+      <div class="timeline" id="invTimeline"></div>
+    </div>
+    <div class="inv-side">
+      <div class="card" id="invHypoCard" hidden><div class="card-h"><h3>Root cause analysis</h3></div><div id="invHypo"></div></div>
+      <div class="card" id="invRcCard" hidden><div class="card-h"><h3>Root cause identified</h3><span class="conf" id="invConf"></span></div><div id="invRc"></div></div>
+      <div class="card" id="invRecCard" hidden><div class="card-h"><h3>Recommended action</h3></div><div id="invRec"></div><div class="inv-actions" id="invActions"></div></div>
+      <div class="card verified" id="invVerified" hidden><div class="vok">✓ RECOVERY VERIFIED</div><div class="muted" style="margin-top:6px" id="invVerifiedSub">The system has recovered and metrics are back to baseline.</div></div>
+    </div>
+  </div>`;
+}
+async function initInvestigation(key){
+  let inc; try{ inc = await (await rvApi('/incidents/'+key)).json(); }catch(e){ return; }
+  const sev = inc.severity===1?'sev1':inc.severity===2?'sev2':'sev3';
+  $('invHead').innerHTML = `<h1 class="h1" style="font-size:30px">${inc.title}</h1>
+    <span class="sev ${sev}">SEV${inc.severity}</span>
+    <span class="tag">${inc.key}</span>${inc.isDemo?'<span class="tag">DEMO</span>':''}
+    <span class="muted" style="margin-left:auto">${inc.service}</span>`;
+  if(inc.status==='resolved') markResolved();
+  openInvStream(key);   // streams all events (existing + live)
+}
+function openInvStream(key){
+  closeStream();
+  rvES = new EventSource(RV_API + '/incidents/' + key + '/stream', { withCredentials:true });
+  rvES.onmessage = (m) => { try { applyInvEvent(JSON.parse(m.data)); } catch(e){} };
+  rvES.onerror = () => {}; // browser auto-reconnects
+}
+function invTlRow(cls, ic, at, msg){
+  const t=$('invTimeline'); if(!t) return;
+  const row=document.createElement('div'); row.className='tl-row';
+  row.innerHTML=`<span class="tl-time">${tlTime(at)}</span><span class="tl-ic ${cls}">${ic}</span><span class="tl-msg">${msg}</span>`;
+  t.appendChild(row);
+}
+function applyInvEvent(e){
+  const id = e.kind + '|' + e.message + '|' + e.at;
+  if(invSeen.has(id)) return; invSeen.add(id);
+  const d = e.data || {};
+  if(e.kind==='detected') invTlRow('warn','!', e.at, e.message);
+  else if(e.kind==='investigation.step') invTlRow('run','→', e.at, e.message);
+  else if(e.kind==='evidence') invTlRow('ok','✓', e.at, e.message);
+  else if(e.kind==='hypothesis'){
+    const card=$('invHypoCard'); card.hidden=false;
+    const wrap=$('invHypo');
+    const lead = (d.confidence||0) >= 50;
+    const el=document.createElement('div'); el.className='hy'+(lead?' lead':'');
+    el.innerHTML=`<div class="hy-top"><b>${e.message}</b><span class="p">${d.confidence||0}%</span></div>
+      <div class="hy-bar"><i style="width:${d.confidence||0}%"></i></div>
+      ${d.for?`<div class="hy-sub">Supports: ${d.for}</div>`:''}${d.against?`<div class="hy-sub">Against: ${d.against}</div>`:''}`;
+    wrap.appendChild(el);
+  }
+  else if(e.kind==='root_cause'){
+    $('invRcCard').hidden=false;
+    $('invConf').textContent = 'Confidence: '+(e.confidence||d.confidence||0)+'%';
+    const why=(d.why||[]).map(w=>`<li>${w}</li>`).join('');
+    $('invRc').innerHTML=`<div style="font-size:17px;font-weight:650;margin-bottom:10px">${e.message}</div><ul class="why">${why}</ul>`;
+  }
+  else if(e.kind==='recommendation'){
+    invRec = { action:e.message, risk:d.risk||'Low', service:($('invHead').querySelector('.muted')||{}).textContent };
+    $('invRecCard').hidden=false;
+    $('invRec').innerHTML=`<div class="rec-box"><div class="a">${e.message}</div>${d.rationale?`<div class="m">${d.rationale}</div>`:''}
+      <div class="rec-tags"><span>Risk: ${d.risk||'Low'}</span><span>Reversible</span></div></div>`;
+    $('invActions').innerHTML=`<button class="btn-reject" onclick="toast('Recommendation rejected')">Reject</button>
+      <button class="btn-approve" id="invApprove" onclick="confirmApprove()">✓ Approve &amp; Execute</button>`;
+  }
+  else if(e.kind==='approval.required') invTlRow('run','⏸', e.at, e.message);
+  else if(e.kind==='remediation') invTlRow('ok','✓', e.at, e.message);
+  else if(e.kind==='verification') invTlRow('ok','✓', e.at, e.message);
+  else if(e.kind==='resolved'){ invTlRow('ok','✓', e.at, e.message); markResolved(); }
+  if(e.status==='resolved') markResolved();
+}
+function markResolved(){
+  const s=$('invStatus'); if(s){ s.className='agent-live done'; s.innerHTML='<span class="dot"></span> Resolved'; }
+  const v=$('invVerified'); if(v) v.hidden=false;
+  const a=$('invApprove'); if(a){ a.disabled=true; a.textContent='Executed'; }
+}
+function confirmApprove(){
+  const key = location.hash.split('/')[2];
+  const ov=document.createElement('div'); ov.className='modal-ov'; ov.id='invModal';
+  ov.innerHTML=`<div class="modal">
+    <h3>Approve production action?</h3>
+    <p>This executes a registered, reversible remediation.</p>
+    <div class="kv"><b>Action:</b> ${invRec?invRec.action:'Rollback'}</div>
+    <div class="kv"><b>Service:</b> ${invRec?invRec.service:''} &nbsp; <b>Risk:</b> ${invRec?invRec.risk:'Low'}</div>
+    <div class="modal-act">
+      <button class="btn-reject" onclick="document.getElementById('invModal').remove()" style="flex:1">Cancel</button>
+      <button class="btn-approve" onclick="doApprove('${key}')">Approve &amp; Execute</button>
+    </div></div>`;
+  ov.addEventListener('click', ev=>{ if(ev.target===ov) ov.remove(); });
+  document.body.appendChild(ov);
+}
+async function doApprove(key){
+  const m=document.getElementById('invModal'); if(m) m.remove();
+  const a=$('invApprove'); if(a){ a.disabled=true; a.textContent='Executing…'; }
+  invTlRow('run','→', new Date().toISOString(), 'Rollback initiated…');
+  try{ await rvApi('/incidents/'+key+'/approve',{method:'POST'}); }catch(e){}
+  // the approve endpoint writes remediation/verification/resolved events → SSE streams them in
+}
+
+/* ---------- investigations list ---------- */
+function statusPill(s){ return s==='resolved'
+  ? '<span class="badge-h"><span class="dot"></span>Resolved</span>'
+  : '<span class="badge-h" style="color:var(--violet-ink)"><span class="dot violet"></span>Investigating</span>'; }
+function pageInvestigationsList(){
+  setTimeout(loadInvestigationsList,0);
+  return `<h1 class="h1">Investigations</h1>
+  <div class="statusline"><span class="dot"></span> <span id="invListStatus">Loading…</span></div>
+  <div id="invList"><div class="muted">Loading…</div></div>`;
+}
+async function loadInvestigationsList(){
+  const el=$('invList'); if(!el) return;
+  let list; try{ list=await (await rvApi('/incidents')).json(); }catch(e){ el.innerHTML='<div class="muted">Could not load.</div>'; return; }
+  const st=$('invListStatus'); if(st) st.textContent = list.length ? (list.length+' incident'+(list.length>1?'s':'')) : 'No investigations yet';
+  if(!list.length){ el.innerHTML=`<div class="health"><div class="empty" style="padding:40px 6px"><div class="orb">${svg(ICN.search)}</div><h4>No investigations yet</h4><p>When RootVector detects an incident it investigates automatically. Try “⚡ Simulate incident” on the Overview.</p><a class="btn-outline" href="#/overview">Back to overview</a></div></div>`; return; }
+  el.innerHTML=`<div class="health"><table class="tbl">
+    <thead><tr><th>Incident</th><th>Service</th><th>Status</th><th>Root cause</th><th>Confidence</th></tr></thead>
+    <tbody>${list.map(i=>`<tr style="cursor:pointer" onclick="location.hash='#/investigations/${i.key}'">
+      <td><div style="font-size:12px;color:var(--muted)">${i.key}${i.isDemo?' · DEMO':''}</div><div style="font-weight:600">${i.title}</div></td>
+      <td>${i.service}</td><td>${statusPill(i.status)}</td><td>${i.rootCause||'—'}</td><td>${i.confidence?i.confidence+'%':'—'}</td></tr>`).join('')}
+    </tbody></table></div>`;
+}
+
+/* ---------- account menu ---------- */
+function rvAvatarInner(u){
+  if(u && u.avatarUrl) return `<img src="${u.avatarUrl}" alt="" referrerpolicy="no-referrer">`;
+  return svg('<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/>'); // clean blank avatar
+}
+function rvRenderUser(){
+  const u = RV_USER || {};
+  const display = u.name || u.firstName || u.email || 'Account';
+  $('rvName').textContent = display;
+  $('rvEmail').textContent = u.email || '';
+  $('rvProv').textContent = 'Signed in with ' + (u.provider && u.provider!=='password' ? u.provider : 'email');
+  $('rvAvatar').innerHTML = rvAvatarInner(u);
+  $('rvAvatar2').innerHTML = rvAvatarInner(u);
+}
+function rvToggleMenu(e){ if(e) e.stopPropagation(); const m=$('rvMenu'); m.hidden=!m.hidden; }
+function rvCloseMenu(){ const m=$('rvMenu'); if(m) m.hidden=true; }
+document.addEventListener('click', e => { if(!e.target.closest('#acct') && !e.target.closest('#rvMenu')) rvCloseMenu(); });
+/* ---------- Settings / Profile ---------- */
+function pageSettings(){
+  setTimeout(loadSettings,0);
+  return `<h1 class="h1">Settings</h1>
+  <div class="statusline"><span class="dot"></span> Your account</div>
+  <div class="row3" style="grid-template-columns:1fr 1fr">
+    <div class="card">
+      <div class="card-h"><h3>Profile</h3></div>
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:12px">
+        <span class="avatar" id="setAvatar" style="width:56px;height:56px"></span>
+        <div style="min-width:0"><div id="setName" style="font-size:16px;font-weight:650"></div><div class="muted" id="setEmail" style="padding:0"></div></div>
+      </div>
+      <div class="kvrow"><span>Name</span><b id="setName2">—</b></div>
+      <div class="kvrow"><span>Email</span><b id="setEmail2">—</b></div>
+      <div class="kvrow"><span>Connected provider</span><b id="setProv">—</b></div>
+      <div class="kvrow"><span>Profile image</span><b id="setImg">—</b></div>
+    </div>
+    <div class="card">
+      <div class="card-h"><h3>Developer / Demo Mode</h3></div>
+      <p class="muted" style="padding:0 0 12px">Demonstrate the full incident → investigation → recovery pipeline without a real outage. Runs the same backend pipeline; incidents are flagged DEMO.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn-primary" onclick="simulateIncident(this)">⚡ Simulate incident</button>
+        <button class="btn-outline" onclick="clearDemo(this)">Clear demo data</button>
+      </div>
+      <div class="sep2"></div>
+      <a class="btn-outline" href="#/integrations" style="display:inline-block">Manage integrations</a>
+      <button class="btn-outline" onclick="rvSignOut()" style="margin-left:8px">Sign out</button>
+    </div>
+  </div>`;
+}
+function loadSettings(){
+  const u=RV_USER||{}; const set=(id,v)=>{const el=$(id); if(el) el.textContent=v;};
+  const full=u.name||[u.firstName,u.lastName].filter(Boolean).join(' ')||'—';
+  set('setName', full); set('setName2', full);
+  set('setEmail', u.email||''); set('setEmail2', u.email||'—');
+  set('setProv', (u.provider&&u.provider!=='password')?u.provider:'Email / password');
+  set('setImg', u.avatarUrl ? 'From provider' : 'None (blank avatar)');
+  const av=$('setAvatar'); if(av) av.innerHTML=rvAvatarInner(u);
+}
+
+/* ---------- notifications ---------- */
+async function updateBell(){
+  try{
+    const d=await (await rvApi('/overview')).json();
+    const n=d.stats.activeIncidents||0;
+    const b=$('bellBadge'); if(b){ b.textContent=n; b.hidden = n===0; }
+  }catch(e){}
+}
+async function toggleNotif(e){
+  if(e) e.stopPropagation();
+  let p=document.getElementById('notifPanel');
+  if(p){ p.remove(); return; }
+  p=document.createElement('div'); p.className='menu'; p.id='notifPanel';
+  p.style.width='330px'; p.style.right='64px'; p.style.top='60px';
+  p.innerHTML='<div class="menu-head" style="border-bottom:1px solid var(--line);padding:10px 10px 12px"><div class="nm">Notifications</div></div><div id="notifBody"><div class="muted" style="padding:10px">Loading…</div></div>';
+  document.querySelector('.topbar').appendChild(p);
+  try{
+    const d=await (await rvApi('/overview')).json();
+    const items=[];
+    (d.activeIncidents||[]).forEach(i=>items.push({ic:svg(ICN.xcircle),color:'#DC2626',t:i.title+(i.isDemo?' · DEMO':''),s:i.key+' · SEV'+i.severity+' · investigating',hash:'#/investigations/'+i.key}));
+    (d.activity||[]).slice(0,5).forEach(a=>items.push({ic:actIcon(a.kind).replace(/<span[^>]*>|<\/span>/g,''),color:'',t:a.title,s:a.service||'',at:a.at}));
+    const body=document.getElementById('notifBody');
+    body.innerHTML = items.length
+      ? items.map(x=>`<div class="notif-item" ${x.hash?`onclick="location.hash='${x.hash}';rvCloseNotif()" style="cursor:pointer"`:''}><span class="ic" style="color:${x.color||'var(--muted)'}">${x.ic}</span><div style="min-width:0"><div style="font-size:13.5px;font-weight:600">${x.t}</div><div class="muted" style="padding:0;font-size:12px">${x.s}${x.at?' · '+timeAgo(x.at):''}</div></div></div>`).join('')
+      : `<div class="empty" style="padding:20px 6px"><div class="orb" style="width:52px;height:52px">${svg(ICN.bell)}</div><h4>You're all caught up</h4><p>New incidents and activity show up here.</p></div>`;
+  }catch(e){ const b=document.getElementById('notifBody'); if(b) b.innerHTML='<div class="muted" style="padding:10px">Could not load.</div>'; }
+}
+function rvCloseNotif(){ const p=document.getElementById('notifPanel'); if(p) p.remove(); }
+document.addEventListener('click', e => { if(!e.target.closest('#bell') && !e.target.closest('#notifPanel')) rvCloseNotif(); });
+
+/* ---------- feedback ---------- */
+function feedbackModal(){
+  const ov=document.createElement('div'); ov.className='modal-ov'; ov.id='fbModal';
+  ov.innerHTML=`<div class="modal"><h3>Give feedback</h3><p>Tell us what's working or what's missing.</p>
+    <textarea id="fbText" rows="4" style="width:100%;margin-top:12px;border:1px solid var(--line);border-radius:10px;padding:11px;font:inherit;font-size:14px;resize:vertical"></textarea>
+    <div class="modal-act"><button class="btn-reject" style="flex:1" onclick="document.getElementById('fbModal').remove()">Cancel</button><button class="btn-approve" onclick="sendFeedback()">Send</button></div></div>`;
+  ov.addEventListener('click',e=>{ if(e.target===ov) ov.remove(); });
+  document.body.appendChild(ov); setTimeout(()=>{const t=document.getElementById('fbText'); if(t) t.focus();},40);
+}
+function sendFeedback(){ const t=(document.getElementById('fbText')||{}).value||''; const m=document.getElementById('fbModal'); if(m) m.remove(); toast(t.trim()?'Thanks — feedback received':'Feedback cancelled'); }
+
+/* ---------- command palette (⌘K / search) ---------- */
+let cmdkIncidents=[];
+async function openPalette(){
+  let ov=document.getElementById('cmdk'); if(ov){ ov.remove(); return; }
+  ov=document.createElement('div'); ov.className='modal-ov'; ov.id='cmdk'; ov.style.alignItems='flex-start';
+  ov.innerHTML=`<div class="modal" style="width:560px;max-width:92vw;margin-top:12vh;padding:8px">
+    <input id="cmdkIn" placeholder="Search pages and incidents…" style="width:100%;border:0;outline:0;font:inherit;font-size:16px;padding:12px 10px;border-bottom:1px solid var(--line)">
+    <div id="cmdkList" style="max-height:44vh;overflow:auto;padding-top:6px"></div></div>`;
+  ov.addEventListener('click',e=>{ if(e.target===ov) ov.remove(); });
+  document.body.appendChild(ov);
+  const inp=document.getElementById('cmdkIn'); inp.focus();
+  try{ cmdkIncidents=await (await rvApi('/incidents')).json(); }catch(e){ cmdkIncidents=[]; }
+  cmdkRender('');
+  inp.addEventListener('input',()=>cmdkRender(inp.value));
+  inp.addEventListener('keydown',e=>{ if(e.key==='Escape') ov.remove(); });
+}
+function cmdkItems(){
+  const pages=[['Overview','#/overview'],['Investigations','#/investigations'],['Services','#/services'],['Repositories','#/repositories'],['Integrations','#/integrations'],['Settings','#/settings']].map(([l,h])=>({label:l,sub:'Page',hash:h}));
+  const inc=(cmdkIncidents||[]).map(i=>({label:`${i.title} (${i.key})`,sub:'Incident · '+i.service,hash:'#/investigations/'+i.key}));
+  return pages.concat(inc);
+}
+function cmdkRender(q){
+  q=(q||'').toLowerCase().trim();
+  const items=cmdkItems().filter(it=>!q||(it.label+' '+it.sub).toLowerCase().includes(q));
+  const el=document.getElementById('cmdkList'); if(!el) return;
+  el.innerHTML = items.length
+    ? items.map(it=>`<div class="cmdk-row" onclick="cmdkGo('${it.hash}')"><div style="font-weight:600">${it.label}</div><div class="muted" style="padding:0;font-size:12px">${it.sub}</div></div>`).join('')
+    : '<div class="muted" style="padding:14px 10px">No matches</div>';
+}
+function cmdkGo(h){ const ov=document.getElementById('cmdk'); if(ov) ov.remove(); location.hash=h; }
+document.addEventListener('keydown', e => {
+  if((e.metaKey||e.ctrlKey) && e.key.toLowerCase()==='k'){ e.preventDefault(); openPalette(); }
+  else if(e.key==='Escape'){ ['cmdk','fbModal','invModal','sentryModal','notifPanel'].forEach(id=>{const el=document.getElementById(id); if(el) el.remove();}); }
+});
+
+async function rvSignOut(){
+  try{ await fetch(RV_API+'/auth/logout',{method:'POST',credentials:'include'}); }catch(x){}
+  location.href='login.html';
+}
+
+/* ---------- boot: real session required ---------- */
+(async function boot(){
+  try{
+    const res = await fetch(RV_API+'/me', { credentials:'include' });
+    if(!res.ok){ location.href='login.html'; return; }
+    RV_USER = await res.json();
+  }catch(e){ location.href='login.html'; return; }
+  rvRenderUser();
+  if(!location.hash) location.hash = '#/overview';
+  route();
+  updateBell();
+})();
+</script>
+</body>
+</html>

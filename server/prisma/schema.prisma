@@ -1,0 +1,97 @@
+// RootVector — Phase 1 schema. Real users backed by Postgres.
+// Later phases add: integrations, repositories, services, incidents,
+// investigations, evidence, hypotheses, recommendations, approvals,
+// remediation_actions, verification_results.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  firstName    String?
+  lastName     String?
+  name         String?  // display name from the auth provider
+  avatarUrl    String?  // real provider photo; null => UI shows a blank avatar
+  provider     String   @default("password") // password | google | github
+  googleId     String?  @unique
+  githubId     String?  @unique
+  passwordHash String?  // only for email/password accounts
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  integrations Integration[]
+}
+
+// A connected provider (github, later sentry, …). The OAuth access token is
+// stored AES-256-GCM encrypted — never in plaintext, never sent to the browser.
+model Integration {
+  id            String   @id @default(cuid())
+  userId        String
+  provider      String   // 'github'
+  externalLogin String?  // e.g. the GitHub username / org
+  accessTokenEnc String  // encrypted token payload (iv:tag:cipher)
+  scopes        String?
+  status        String   @default("connected") // connected | needs_attention | disconnected
+  lastEventAt   DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([userId, provider])
+}
+
+// A production incident — created by real monitoring (Sentry) or a demo simulation.
+model Incident {
+  id          String    @id @default(cuid())
+  key         String    @unique          // e.g. INC-4821
+  title       String
+  service     String
+  severity    Int       @default(2)      // 1 = SEV1 … 3 = SEV3
+  status      String    @default("active") // active | investigating | resolved
+  source      String                     // sentry | github | demo | manual
+  isDemo      Boolean   @default(false)
+  errorRate   Float?
+  rootCause   String?
+  confidence  Int?
+  startedAt   DateTime  @default(now())
+  resolvedAt  DateTime?
+  events      IncidentEvent[]
+}
+
+// Every step of an investigation is a real, persisted event (streamed to the UI).
+model IncidentEvent {
+  id         String   @id @default(cuid())
+  incidentId String
+  kind       String   // detected | investigation.step | evidence | hypothesis | root_cause | recommendation | approval.required | remediation | verification | resolved
+  message    String
+  data       Json?
+  at         DateTime @default(now())
+  incident   Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+}
+
+// Feed of real events from connected systems (GitHub PRs, deployments, errors).
+model Activity {
+  id      String   @id @default(cuid())
+  kind    String   // pr_merged | deployment | error | push
+  title   String
+  service String?
+  url     String?
+  meta    Json?
+  at      DateTime @default(now())
+}
+
+// Raw inbound webhook deliveries, kept for audit + signature-verification result.
+model WebhookDelivery {
+  id       String   @id @default(cuid())
+  provider String   // github | sentry
+  event    String?
+  verified Boolean  @default(false)
+  at       DateTime @default(now())
+}

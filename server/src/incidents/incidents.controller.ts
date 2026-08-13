@@ -1,0 +1,92 @@
+import { Controller, Get, Post, Param, Sse, UseGuards, MessageEvent } from '@nestjs/common';
+import { Observable, interval, from } from 'rxjs';
+import { concatMap, mergeMap, map } from 'rxjs/operators';
+import { IncidentsService } from './incidents.service';
+import { AgentService } from './agent.service';
+import { IntegrationsService } from '../integrations/integrations.service';
+import { JwtAuthGuard, CurrentUser, AuthedUser } from '../auth/jwt.guard';
+
+@Controller()
+@UseGuards(JwtAuthGuard)
+export class IncidentsController {
+  constructor(
+    private readonly incidents: IncidentsService,
+    private readonly agent: AgentService,
+    private readonly integrations: IntegrationsService,
+  ) {}
+
+  @Get('overview')
+  async overview(@CurrentUser() u: AuthedUser) {
+    const base = await this.incidents.overview();
+    // Pull recent LIVE GitHub activity so the dashboard fills the moment you connect.
+    const gh = await this.integrations.githubActivity(u.userId).catch(() => null);
+    if (gh && gh.length) {
+      const activity = [...gh, ...base.activity].slice(0, 8);
+      const services = new Set(
+        [...gh, ...base.activity].map((a: any) => a.service).filter(Boolean),
+      );
+      return {
+        stats: {
+          activeIncidents: base.stats.activeIncidents,
+          servicesMonitored: services.size,
+          recentDeployments: base.stats.recentDeployments + gh.filter((a: any) => a.kind === 'deployment').length,
+          alertsAnalyzed: base.stats.alertsAnalyzed + gh.filter((a: any) => a.kind === 'error').length,
+        },
+        activity,
+        activeIncidents: base.activeIncidents,
+        githubConnected: true,
+      };
+    }
+    return { ...base, githubConnected: gh !== null };
+  }
+
+  @Get('incidents')
+  list() {
+    return this.incidents.list();
+  }
+
+  @Get('incidents/:key')
+  get(@Param('key') key: string) {
+    return this.incidents.get(key);
+  }
+
+  /** Live investigation stream (Server-Sent Events) — pushes new events as the agent works. */
+  @Sse('incidents/:key/stream')
+  stream(@Param('key') key: string): Observable<MessageEvent> {
+    let lastAt = 0;
+    return interval(700).pipe(
+      concatMap(async () => {
+        const inc = await this.incidents.get(key).catch(() => null);
+        if (!inc) return [] as any[];
+        const fresh = inc.events.filter((e) => new Date(e.at).getTime() > lastAt);
+        if (fresh.length) lastAt = new Date(fresh[fresh.length - 1].at).getTime();
+        return fresh.map((e) => ({
+          kind: e.kind, message: e.message, data: e.data, at: e.at,
+          status: inc.status, rootCause: inc.rootCause, confidence: inc.confidence,
+        }));
+      }),
+      mergeMap((list) => from(list)),
+      map((payload) => ({ data: payload }) as MessageEvent),
+    );
+  }
+
+  /** Human approval → real remediation + verification + resolution. */
+  @Post('incidents/:key/approve')
+  approve(@Param('key') key: string) {
+    return this.incidents.approve(key);
+  }
+
+  /** DEV/DEMO: simulate an incident, then let the agent investigate it live. */
+  @Post('dev/simulate-incident')
+  async simulate() {
+    const inc = await this.incidents.simulate();
+    this.agent.run(inc.id).catch(() => undefined); // fire-and-forget; streamed via SSE
+    return inc;
+  }
+
+  /** DEV: clear all demo incidents + seeded activity. */
+  @Post('dev/reset-demo')
+  resetDemo() {
+    return this.incidents.resetDemo();
+  }
+}

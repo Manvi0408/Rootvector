@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Log in · RootVector</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M25 7C25 16 18 24 8 24C8 15 15 7 25 7Z' fill='none' stroke='%231B1A17' stroke-width='2'/%3E%3Ccircle cx='9.6' cy='22.4' r='1.9' fill='%231B1A17'/%3E%3C/svg%3E">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+:root{
+  --ink:#1B1A17; --ink-2:#3C3A35; --muted:#6E6A62; --line:#E5E3EA;
+  --indigo:#6D5AE6; --indigo-600:#5B49D6; --indigo-soft:#EEEBFB;
+  --red:#DC2626; --green:#1F9D57;
+  --serif:"Newsreader","Iowan Old Style",Palatino,Georgia,serif;
+  --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;font-family:var(--sans);color:var(--ink);background:#fff;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;cursor:pointer}
+
+.split{display:grid;grid-template-columns:1fr 1fr;min-height:100vh}
+
+/* ---------- LEFT · brand panel ---------- */
+.brand-side{position:relative;overflow:hidden;color:#fff;
+  background:linear-gradient(115deg,rgba(28,20,14,.52),rgba(28,20,14,.14) 55%,rgba(28,20,14,0)),url('assets/nexus-bg.jpg') center/cover no-repeat;
+  display:flex;flex-direction:column;padding:44px 52px 52px}
+.brand-logo{display:flex;align-items:center;gap:9px;font-weight:650;font-size:24px;letter-spacing:-.03em;color:#fff}
+.brand-logo .mk{width:31px;height:31px}
+.brand-body{margin-top:auto;max-width:520px}
+.eyebrow{font-size:12.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;opacity:.92;margin:0 0 18px}
+.brand-body h1{font-family:var(--serif);font-weight:500;font-size:clamp(34px,4.4vw,56px);line-height:1.04;letter-spacing:-.015em;margin:0 0 20px;text-shadow:0 2px 24px rgba(0,0,0,.22)}
+.brand-sub{font-size:17px;line-height:1.5;max-width:33ch;opacity:.94;margin:0 0 26px;text-shadow:0 1px 14px rgba(0,0,0,.22)}
+.brand-list{list-style:none;margin:0;padding:0;font-size:15px;line-height:2;opacity:.96}
+.brand-list li{display:flex;align-items:baseline;gap:10px;text-shadow:0 1px 12px rgba(0,0,0,.25)}
+.brand-list .mkr{width:22px;flex:0 0 auto;text-align:left;opacity:.9;font-variant-numeric:tabular-nums}
+
+/* ---------- RIGHT · form panel ---------- */
+.form-side{display:flex;align-items:center;justify-content:center;padding:40px 24px;background:#fff}
+.card{width:100%;max-width:420px}
+.card h2{font-family:var(--serif);font-weight:500;font-size:44px;letter-spacing:-.01em;text-align:center;margin:0 0 34px}
+.field{margin-bottom:18px}
+.field label{display:block;font-size:13px;font-weight:600;color:var(--ink);margin:0 0 8px}
+.control{position:relative}
+.input{width:100%;font:15px/1.4 var(--sans);color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 16px;transition:border-color .15s,box-shadow .15s}
+.input::placeholder{color:#A6A2AC}
+.input:focus{outline:0;border-color:var(--indigo);box-shadow:0 0 0 3px rgba(109,90,230,.16)}
+.input.bad{border-color:var(--red);box-shadow:0 0 0 3px rgba(220,38,38,.13)}
+.eye{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:34px;height:34px;border:0;background:none;color:#8A8690;display:flex;align-items:center;justify-content:center;border-radius:8px}
+.eye:hover{color:var(--ink-2);background:#F3F2F6}
+.err{display:none;color:var(--red);font-size:13px;margin:8px 2px 0;line-height:1.45}
+.err a{color:var(--indigo);font-weight:600}
+.err.show{display:block}
+.rowlink{display:flex;justify-content:flex-end;margin:-2px 2px 20px}
+.rowlink a{color:var(--indigo);font-size:14px;font-weight:600}
+.rowlink a:hover{color:var(--indigo-600)}
+.btn-primary{width:100%;border:0;border-radius:12px;background:var(--indigo);color:#fff;font-size:15.5px;font-weight:600;padding:15px;transition:background .15s,transform .05s}
+.btn-primary:hover{background:var(--indigo-600)}
+.btn-primary:active{transform:translateY(1px)}
+.btn-primary[disabled]{opacity:.7;cursor:default}
+.divide{display:flex;align-items:center;gap:14px;color:var(--muted);font-size:13.5px;margin:22px 0}
+.divide::before,.divide::after{content:"";flex:1;height:1px;background:var(--line)}
+.oauth{width:100%;display:flex;align-items:center;justify-content:center;gap:11px;border:1px solid var(--line);background:#fff;border-radius:12px;padding:13px;font-size:15px;font-weight:600;color:var(--ink);transition:background .15s,border-color .15s}
+.oauth+.oauth{margin-top:12px}
+.oauth:hover{background:#FAFAFB;border-color:#D8D6DE}
+.oauth svg{width:20px;height:20px;flex:0 0 auto}
+.oauth[disabled]{opacity:.65;cursor:default}
+.foot{text-align:center;color:var(--muted);font-size:14.5px;margin:26px 0 0}
+.foot a{color:var(--indigo);font-weight:600}
+.foot a:hover{color:var(--indigo-600)}
+.note{text-align:center;color:var(--green);font-size:13px;margin:14px 0 0;display:none}
+.note.show{display:block}
+.back{position:absolute;top:20px;left:24px;font-size:13.5px;font-weight:600;color:var(--muted);z-index:3}
+.back:hover{color:var(--ink)}
+
+@media(max-width:860px){
+  .split{grid-template-columns:1fr}
+  .brand-side{min-height:230px;padding:26px 28px}
+  .brand-body{margin-top:18px;max-width:none}
+  .brand-body h1{font-size:32px;margin-bottom:12px}
+  .brand-sub{margin-bottom:0}
+  .brand-list{display:none}
+  .form-side{padding:34px 22px 48px}
+  .card h2{font-size:36px;margin-bottom:26px}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<a class="back" href="index.html">← Back to site</a>
+<div class="split">
+
+  <!-- LEFT -->
+  <section class="brand-side">
+    <a class="brand-logo" href="index.html">
+      <svg class="mk" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <path d="M25 7C25 16 18 24 8 24C8 15 15 7 25 7Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M11.5 20.5C15 18.5 19 14.5 21.5 10" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+        <circle cx="9.6" cy="22.4" r="1.75" fill="currentColor"/>
+      </svg>
+      <b>rootvector</b>
+    </a>
+    <div class="brand-body">
+      <p class="eyebrow">Autonomous Incident Investigation</p>
+      <h1>Find the cause.<br>Fix the system.</h1>
+      <p class="brand-sub">Trace production failures across logs, metrics, deployments, source code and team chatter.</p>
+      <ul class="brand-list">
+        <li><span class="mkr">◆</span>Northwind</li>
+        <li><span class="mkr">1.</span>Vantage</li>
+        <li><span class="mkr">2.</span>◦ Helio</li>
+        <li><span class="mkr">3.</span>Ledgerly</li>
+        <li><span class="mkr">4.</span>◎ Cobalt</li>
+        <li><span class="mkr">5.</span>Skyforge</li>
+        <li><span class="mkr">6.</span>△ Meridian</li>
+        <li><span class="mkr">7.</span>Orbital</li>
+        <li><span class="mkr">8.</span>✳ Beacon</li>
+        <li><span class="mkr">9.</span>Quanta</li>
+        <li><span class="mkr">10.</span>◇ Lumen</li>
+        <li><span class="mkr">11.</span>Fathom</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- RIGHT -->
+  <section class="form-side">
+    <form class="card" id="card" novalidate>
+      <h2 id="title">Log in</h2>
+
+      <div class="field">
+        <label for="email">Email</label>
+        <div class="control">
+          <input class="input" id="email" type="email" autocomplete="email" placeholder="you@company.com" required>
+        </div>
+        <p class="err" id="emailErr"></p>
+      </div>
+
+      <div class="field">
+        <label for="pass">Password</label>
+        <div class="control">
+          <input class="input" id="pass" type="password" autocomplete="current-password" placeholder="Enter your password" required style="padding-right:46px">
+          <button class="eye" id="eye" type="button" aria-label="Show password">
+            <svg id="eyeOpen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+            <svg id="eyeOff" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" hidden><path d="M3 3l18 18"/><path d="M10.6 10.6a3 3 0 0 0 4.2 4.2"/><path d="M9.9 5.2A9.6 9.6 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-3.3 4M6.1 6.1A17 17 0 0 0 2 12s3.5 7 10 7a9.6 9.6 0 0 0 3-.5"/></svg>
+          </button>
+        </div>
+        <p class="err" id="passErr"></p>
+      </div>
+
+      <div class="rowlink" id="forgotRow"><a href="#" id="forgot">Forgot password?</a></div>
+
+      <button class="btn-primary" id="submit" type="submit">Log in →</button>
+
+      <div class="divide" id="divide">Or login via</div>
+
+      <button class="oauth" id="google" type="button">
+        <svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.3-.4-3.5Z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7Z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.6 39.6 16.2 44 24 44Z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3a12 12 0 0 1-4.1 5.6l6.2 5.2C41.6 35.9 44 30.5 44 24c0-1.3-.1-2.3-.4-3.5Z"/></svg>
+        Continue with Google
+      </button>
+      <button class="oauth" id="github" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#181717" d="M12 .5A11.5 11.5 0 0 0 .5 12a11.5 11.5 0 0 0 7.9 10.9c.6.1.8-.2.8-.5v-2c-3.2.7-3.9-1.4-3.9-1.4-.5-1.3-1.3-1.7-1.3-1.7-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.7 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.2 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0C17.3 5 18.3 5.3 18.3 5.3c.7 1.7.3 2.9.1 3.2.8.8 1.2 1.8 1.2 3.1 0 4.4-2.7 5.4-5.3 5.7.4.4.8 1.1.8 2.2v3.3c0 .3.2.6.8.5A11.5 11.5 0 0 0 23.5 12 11.5 11.5 0 0 0 12 .5Z"/></svg>
+        Continue with GitHub
+      </button>
+
+      <p class="note" id="note"></p>
+      <p class="foot" id="foot">Don't have an account? <a href="signup.html">Create an account</a></p>
+    </form>
+  </section>
+</div>
+
+<script>
+/* Real RootVector backend (NestJS). Auth sets an httpOnly session cookie. */
+const API_BASE = "http://localhost:4000/api";
+const GOOGLE_CLIENT_ID = "800195378496-ppr6iadthegssifqiigs8a00flgd39j0.apps.googleusercontent.com";
+
+const $ = s => document.getElementById(s);
+
+/* password visibility */
+$("eye").addEventListener("click", () => {
+  const p = $("pass"), open = $("eyeOpen"), off = $("eyeOff");
+  const show = p.type === "password";
+  p.type = show ? "text" : "password";
+  open.hidden = show; off.hidden = !show;
+  $("eye").setAttribute("aria-label", show ? "Hide password" : "Show password");
+});
+
+["email","pass"].forEach(id => $(id).addEventListener("input", () => {
+  $(id).classList.remove("bad");
+  $(id === "email" ? "emailErr" : "passErr").classList.remove("show");
+}));
+
+function fail(inputId, errId, html){ $(inputId).classList.add("bad"); const e=$(errId); e.innerHTML=html; e.classList.add("show"); }
+function validEmail(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
+function busy(msg){ const n=$("note"); n.style.color=""; n.textContent=msg; n.classList.add("show"); $("submit").disabled=true; }
+function ready(){ $("submit").disabled=false; }
+function goApp(){ location.href = "app.html?t=" + Date.now(); }  /* cache-bust so the latest dashboard always loads */
+function noteErr(msg){ const n=$("note"); n.style.color="var(--red)"; n.textContent=msg; n.classList.add("show"); }
+
+$("forgot").addEventListener("click", e => { e.preventDefault(); alert("Password reset isn't set up yet."); });
+
+/* email + password → real backend session */
+$("card").addEventListener("submit", async e => {
+  e.preventDefault();
+  const email = $("email").value.trim().toLowerCase();
+  const pass  = $("pass").value;
+  let ok = true;
+  if(!validEmail(email)){ fail("email","emailErr","Enter a valid email address."); ok=false; }
+  if(pass.length < 6){ fail("pass","passErr","Password must be at least 6 characters."); ok=false; }
+  if(!ok) return;
+  busy("Signing you in…");
+  try {
+    const res = await fetch(API_BASE + "/auth/login", {
+      method: "POST", credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password: pass })
+    });
+    if(res.ok){ goApp(); return; }
+    ready();
+    if(res.status === 401){
+      fail("email","emailErr",'We couldn\'t sign you in. Check your details or <a id="mkacct" href="signup.html">create an account →</a>');
+      const mk=$("mkacct"); if(mk) mk.addEventListener("click", ()=>{ try{ sessionStorage.setItem("rv_prefill_email", email); }catch(x){} });
+    } else {
+      noteErr("Something went wrong signing in.");
+    }
+  } catch(err){ ready(); noteErr("Can't reach the RootVector server on :4000. Start the backend (npm run start:dev)."); }
+});
+
+/* Google → popup gives an access token → backend verifies it via userinfo */
+let _gTokenClient = null;
+$("google").addEventListener("click", () => {
+  if(!(window.google && google.accounts && google.accounts.oauth2)){
+    noteErr("Google sign-in is still loading — try again in a second.");
+    return;
+  }
+  if(!_gTokenClient){
+    _gTokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: GOOGLE_CLIENT_ID,
+      scope: "openid email profile",
+      callback: async (resp) => {
+        if(!resp || !resp.access_token){ noteErr("Google sign-in was cancelled."); return; }
+        busy("Signing you in with Google…");
+        try {
+          const r = await fetch(API_BASE + "/auth/google", {
+            method:"POST", credentials:"include",
+            headers:{ "Content-Type":"application/json" },
+            body: JSON.stringify({ accessToken: resp.access_token })
+          });
+          if(r.ok){ goApp(); } else { ready(); noteErr("Google sign-in failed on the server."); }
+        } catch(e){ ready(); noteErr("Can't reach the RootVector server on :4000."); }
+      }
+    });
+  }
+  $("note").classList.remove("show");
+  _gTokenClient.requestAccessToken();
+});
+
+/* GitHub → backend OAuth (the client secret stays on the server) */
+$("github").addEventListener("click", () => {
+  busy("Redirecting to GitHub…");
+  location.href = API_BASE + "/auth/github";
+});
+</script>
+</body>
+</html>

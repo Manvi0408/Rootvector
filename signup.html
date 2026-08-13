@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Create account · RootVector</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M25 7C25 16 18 24 8 24C8 15 15 7 25 7Z' fill='none' stroke='%231B1A17' stroke-width='2'/%3E%3Ccircle cx='9.6' cy='22.4' r='1.9' fill='%231B1A17'/%3E%3C/svg%3E">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#1B1A17; --ink-2:#3C3A35; --muted:#6E6A62;
+  --indigo:#6D5AE6; --indigo-600:#5B49D6; --red:#DC2626; --green:#1F9D57;
+  --serif:"Newsreader","Iowan Old Style",Palatino,Georgia,serif;
+  --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;font-family:var(--sans);color:var(--ink);-webkit-font-smoothing:antialiased;
+  background:url('assets/nexus-bg.jpg') center/cover no-repeat fixed;}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;cursor:pointer}
+
+.page{min-height:100vh;display:flex;flex-direction:column;padding:22px}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:6px 8px}
+.brand-logo{display:flex;align-items:center;gap:9px;font-weight:650;font-size:24px;letter-spacing:-.03em;color:var(--ink)}
+.brand-logo .mk{width:31px;height:31px}
+.topbar .right{font-size:14.5px;color:var(--ink-2)}
+.topbar .right a{color:var(--indigo);font-weight:600;margin-left:4px}
+.topbar .right a:hover{color:var(--indigo-600)}
+
+.wrap{flex:1;display:flex;align-items:center;justify-content:center;padding:24px 0}
+.card{width:100%;max-width:770px;border-radius:26px;padding:44px 52px 30px;
+  background:rgba(255,255,255,.42);backdrop-filter:blur(22px) saturate(1.1);-webkit-backdrop-filter:blur(22px) saturate(1.1);
+  border:1px solid rgba(255,255,255,.6);box-shadow:0 40px 90px -40px rgba(30,22,16,.5)}
+.card h1{font-family:var(--serif);font-weight:500;font-size:clamp(38px,5vw,52px);letter-spacing:-.01em;text-align:center;margin:0 0 6px}
+.card .sub{text-align:center;color:var(--ink-2);font-size:16px;margin:0 0 30px}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.field{margin-bottom:18px}
+.field label{display:block;font-size:13px;font-weight:600;color:var(--ink);margin:0 0 8px}
+.field label .req{color:var(--red)}
+.control{position:relative}
+.control .lead{position:absolute;left:14px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:#8A8690;pointer-events:none}
+.input{width:100%;font:15px/1.4 var(--sans);color:var(--ink);
+  background:rgba(255,255,255,.55);border:1px solid rgba(255,255,255,.75);border-radius:13px;
+  padding:14px 16px 14px 42px;transition:border-color .15s,box-shadow .15s,background .15s}
+.input::placeholder{color:#8F8B84}
+.input:focus{outline:0;background:rgba(255,255,255,.8);border-color:var(--indigo);box-shadow:0 0 0 3px rgba(109,90,230,.18)}
+.input.bad{border-color:var(--red);box-shadow:0 0 0 3px rgba(220,38,38,.14)}
+.eye{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:34px;height:34px;border:0;background:none;color:#8A8690;display:flex;align-items:center;justify-content:center;border-radius:8px}
+.eye:hover{color:var(--ink-2);background:rgba(0,0,0,.05)}
+.err{display:none;color:var(--red);font-size:13px;margin:8px 2px 0}
+.err.show{display:block}
+.err a{color:var(--indigo);font-weight:600}
+
+.btn-primary{width:100%;border:0;border-radius:13px;background:var(--indigo);color:#fff;font-size:16px;font-weight:600;padding:16px;margin-top:6px;transition:background .15s,transform .05s}
+.btn-primary:hover{background:var(--indigo-600)}
+.btn-primary:active{transform:translateY(1px)}
+.btn-primary[disabled]{opacity:.7;cursor:default}
+.legal{display:flex;align-items:center;justify-content:center;gap:7px;color:var(--ink-2);font-size:13px;margin:18px 0 0;text-align:center}
+.legal svg{width:14px;height:14px;flex:0 0 auto;color:var(--muted)}
+.legal a{color:var(--indigo);font-weight:600}
+.note{text-align:center;color:var(--green);font-size:13.5px;margin:14px 0 0;display:none}
+.note.show{display:block}
+
+@media(max-width:640px){
+  .page{padding:16px}
+  .card{padding:30px 22px 24px;border-radius:20px}
+  .grid2{grid-template-columns:1fr;gap:0}
+  body{background-attachment:scroll}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="topbar">
+    <a class="brand-logo" href="index.html">
+      <svg class="mk" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <path d="M25 7C25 16 18 24 8 24C8 15 15 7 25 7Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M11.5 20.5C15 18.5 19 14.5 21.5 10" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+        <circle cx="9.6" cy="22.4" r="1.75" fill="currentColor"/>
+      </svg>
+      <b>rootvector</b>
+    </a>
+    <div class="right">Already have an account? <a href="login.html">Log in</a></div>
+  </div>
+
+  <div class="wrap">
+    <form class="card" id="card" novalidate>
+      <h1>Create account</h1>
+      <p class="sub">Get started with RootVector</p>
+
+      <div class="grid2">
+        <div class="field">
+          <label for="first">First name <span class="req">*</span></label>
+          <div class="control">
+            <svg class="lead" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
+            <input class="input" id="first" type="text" autocomplete="given-name" placeholder="Enter your first name" required>
+          </div>
+          <p class="err" id="firstErr">Please enter your first name.</p>
+        </div>
+        <div class="field">
+          <label for="last">Last name <span class="req">*</span></label>
+          <div class="control">
+            <svg class="lead" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
+            <input class="input" id="last" type="text" autocomplete="family-name" placeholder="Enter your last name" required>
+          </div>
+          <p class="err" id="lastErr">Please enter your last name.</p>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="phone">Phone number (optional)</label>
+        <div class="control">
+          <svg class="lead" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.6A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.3 1.8.6 2.7a2 2 0 0 1-.5 2.1L8.1 9.6a16 16 0 0 0 6 6l1.1-1.1a2 2 0 0 1 2.1-.5c.9.3 1.8.5 2.7.6a2 2 0 0 1 1.7 2Z"/></svg>
+          <input class="input" id="phone" type="tel" autocomplete="tel" placeholder="Enter your phone number">
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="email">Email address <span class="req">*</span></label>
+        <div class="control">
+          <svg class="lead" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+          <input class="input" id="email" type="email" autocomplete="email" placeholder="Enter your email address" required>
+        </div>
+        <p class="err" id="emailErr"></p>
+      </div>
+
+      <div class="field">
+        <label for="pass">Password <span class="req">*</span></label>
+        <div class="control">
+          <svg class="lead" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+          <input class="input" id="pass" type="password" autocomplete="new-password" placeholder="Create your password" required style="padding-right:46px">
+          <button class="eye" id="eye" type="button" aria-label="Show password">
+            <svg id="eyeOpen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+            <svg id="eyeOff" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" hidden><path d="M3 3l18 18"/><path d="M10.6 10.6a3 3 0 0 0 4.2 4.2"/><path d="M9.9 5.2A9.6 9.6 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-3.3 4M6.1 6.1A17 17 0 0 0 2 12s3.5 7 10 7a9.6 9.6 0 0 0 3-.5"/></svg>
+          </button>
+        </div>
+        <p class="err" id="passErr"></p>
+      </div>
+
+      <button class="btn-primary" id="submit" type="submit">Create account →</button>
+
+      <p class="note" id="note"></p>
+      <p class="legal">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+        By creating an account, you agree to our <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.
+      </p>
+    </form>
+  </div>
+</div>
+
+<script>
+const $ = s => document.getElementById(s);
+
+/* prefill email if the user came from the "create an account" link on login */
+try {
+  const pre = sessionStorage.getItem("rv_prefill_email");
+  if(pre){ $("email").value = pre; sessionStorage.removeItem("rv_prefill_email"); }
+} catch(e){}
+
+/* password visibility */
+$("eye").addEventListener("click", () => {
+  const p = $("pass"), open = $("eyeOpen"), off = $("eyeOff");
+  const show = p.type === "password";
+  p.type = show ? "text" : "password";
+  open.hidden = show; off.hidden = !show;
+  $("eye").setAttribute("aria-label", show ? "Hide password" : "Show password");
+});
+
+/* clear error styling while typing */
+["first","last","email","pass"].forEach(id => $(id).addEventListener("input", () => {
+  $(id).classList.remove("bad");
+  const e = $(id + "Err"); if(e) e.classList.remove("show");
+}));
+
+function fail(id, errId, html){ $(id).classList.add("bad"); const e = $(errId); if(html!==undefined) e.innerHTML = html; e.classList.add("show"); }
+function validEmail(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
+const API_BASE = "http://localhost:4000/api";
+
+$("card").addEventListener("submit", async e => {
+  e.preventDefault();
+  const first = $("first").value.trim();
+  const last  = $("last").value.trim();
+  const email = $("email").value.trim().toLowerCase();
+  const pass  = $("pass").value;
+
+  let ok = true;
+  if(!first){ fail("first","firstErr"); ok = false; }
+  if(!last){ fail("last","lastErr"); ok = false; }
+  if(!validEmail(email)){ fail("email","emailErr","Enter a valid email address."); ok = false; }
+  // each account sets its own unique password — enforce a minimum strength
+  if(pass.length < 8){ fail("pass","passErr","Password must be at least 8 characters."); ok = false; }
+  else if(!/[A-Za-z]/.test(pass) || !/[0-9]/.test(pass)){ fail("pass","passErr","Use at least one letter and one number."); ok = false; }
+  if(!ok) return;
+
+  const n = $("note"); n.style.color=""; n.textContent = "Creating your account…"; n.classList.add("show");
+  $("submit").disabled = true; $("submit").textContent = "…";
+  try {
+    const res = await fetch(API_BASE + "/auth/signup", {
+      method:"POST", credentials:"include",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify({ email, password: pass, firstName: first, lastName: last })
+    });
+    if(res.ok){ location.href = "app.html?t=" + Date.now(); return; }
+    $("submit").disabled = false; $("submit").textContent = "Create account →";
+    if(res.status === 409){
+      n.classList.remove("show");
+      fail("email","emailErr","An account with this email already exists. <a href=\"login.html\">Log in →</a>");
+    } else {
+      n.style.color="var(--red)"; n.textContent = "Could not create the account.";
+    }
+  } catch(err){
+    $("submit").disabled = false; $("submit").textContent = "Create account →";
+    n.style.color="var(--red)"; n.textContent = "Can't reach the RootVector server on :4000.";
+  }
+});
+</script>
+</body>
+</html>
