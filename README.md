@@ -6,6 +6,47 @@
 
 ---
 
+## The problem
+
+When production breaks, one engineer drops everything and spends **30–60 minutes** manually stitching together logs, deployments, GitHub, Slack and past incidents to find the cause. Meanwhile customers are impacted, the on-call is overloaded, and the roadmap slips. The real cost of an incident isn't just downtime — it's the context-switching and the manual detective work, every single time.
+
+## The solution
+
+**RootVector is an autonomous incident-investigation agent.** It connects to your engineering stack, detects incidents from real monitoring signals, and runs the entire investigation itself — correlating deployments, pull requests, errors and traces — then returns a **root cause with evidence and a confidence score** plus a recommended fix. A human stays in the loop: nothing is executed until a person approves. After remediation, RootVector **verifies recovery** against the metrics.
+
+## Architecture
+
+```mermaid
+flowchart LR
+  U([User]) --> FE["Frontend<br/>static HTML/CSS/JS<br/>marketing · auth · dashboard"]
+  FE -->|"REST + SSE<br/>httpOnly cookie"| BE
+
+  subgraph BE["NestJS backend"]
+    direction TB
+    A["Auth<br/>Google · GitHub · email · JWT"]
+    I["Integrations<br/>GitHub · Sentry<br/>encrypted tokens"]
+    N["Incidents<br/>pipeline · AI agent · SSE · webhooks"]
+  end
+
+  BE --> DB[("PostgreSQL<br/>Prisma")]
+  GH["GitHub"] -->|"OAuth + webhooks"| I
+  SEN["Sentry"] -->|"signed webhooks"| N
+  N -.->|"optional"| LLM[["LLM<br/>investigation agent"]]
+```
+
+**Layers**
+
+- **Frontend** — static HTML/CSS/JS (no build): marketing site, auth pages, single-page dashboard. Talks to the API over REST + Server-Sent Events with an httpOnly session cookie.
+- **Backend (NestJS)** — `auth` (Google/GitHub/email + JWT), `integrations` (provider OAuth, AES-256-GCM token storage, signature-verified webhooks), `incidents` (the pipeline, the AI investigation agent, SSE streaming).
+- **Data** — PostgreSQL via Prisma: users, integrations, incidents, investigation events, activity, webhook deliveries.
+- **AI agent** — gathers real evidence and produces hypotheses, a root cause and a recommendation; uses an LLM when configured, and a grounded correlation engine otherwise.
+
+**The platform — from signals to autonomous investigation to a human-approved fix:**
+
+![Platform architecture](assets/platform-diagram.jpeg)
+
+---
+
 ## Screenshots
 
 A walkthrough of a single incident, from detection to verified recovery:
@@ -17,10 +58,6 @@ A walkthrough of a single incident, from detection to verified recovery:
 | Root cause found | Fix recommended | Recovery verified |
 |---|---|---|
 | ![Root cause found](assets/demo-4.png) | ![Fix recommended](assets/demo-5.png) | ![Recovery verified](assets/demo-6.png) |
-
-**The platform — from signals to autonomous investigation to a human-approved fix:**
-
-![Platform architecture](assets/platform-diagram.jpeg)
 
 ---
 
