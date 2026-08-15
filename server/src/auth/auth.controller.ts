@@ -15,13 +15,24 @@ import { AuthService } from './auth.service';
 import { SESSION_COOKIE } from './jwt.guard';
 import { IntegrationsService } from '../integrations/integrations.service';
 
+// In production the frontend and backend are on different HTTPS hosts, so the
+// session cookie must be SameSite=None; Secure to be stored/sent cross-site.
+// Locally (http backend) we keep Lax so it works without HTTPS.
+const CROSS_SITE = (process.env.BACKEND_PUBLIC_URL ?? '').startsWith('https://');
+
+function sessionCookieOpts() {
+  return {
+    httpOnly: true as const, // never readable by JS → no token in the UI
+    sameSite: (CROSS_SITE ? 'none' : 'lax') as 'none' | 'lax',
+    secure: CROSS_SITE, // required alongside SameSite=None
+    path: '/',
+  };
+}
+
 function setSession(res: Response, token: string) {
   res.cookie(SESSION_COOKIE, token, {
-    httpOnly: true, // never readable by JS → no token in the UI
-    sameSite: 'lax',
-    secure: false, // set true behind HTTPS in production
+    ...sessionCookieOpts(),
     maxAge: 7 * 24 * 3600 * 1000,
-    path: '/',
   });
 }
 
@@ -173,7 +184,7 @@ export class AuthController {
 
   @Post('logout')
   logout(@Res({ passthrough: true }) res: Response) {
-    res.clearCookie(SESSION_COOKIE, { path: '/' });
+    res.clearCookie(SESSION_COOKIE, sessionCookieOpts());
     return { ok: true };
   }
 }
