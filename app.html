@@ -284,7 +284,11 @@ button{font-family:inherit;cursor:pointer}
 </div>
 
 <script>
-const RV_API = "http://localhost:4000/api";
+/* Local dev serves the frontend on :4178 (separate backend on :4000).
+   In production the backend serves this page itself, so use a same-origin path. */
+const RV_API = (location.port === "4178" || location.protocol === "file:")
+  ? "http://localhost:4000/api"
+  : "/api";
 let RV_USER = null;
 const $ = id => document.getElementById(id);
 

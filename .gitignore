@@ -8,6 +8,7 @@ node_modules/
 **/node_modules/
 server/dist/
 **/dist/
+server/public/
 *.tsbuildinfo
 
 # --- local dev database (may contain user data) ---
