@@ -9,30 +9,25 @@ export interface Verdict {
 }
 
 /**
- * Real LLM reasoning for the investigation agent. Enabled only when
- * ANTHROPIC_API_KEY and LLM_MODEL are set. The SDK is imported lazily so the
- * app runs fine (on the grounded engine) without a key.
+ * LLM reasoning for the investigation agent, powered by Google Gemini.
+ * Enabled only when GEMINI_API_KEY is set. Uses the Gemini REST API over
+ * fetch (no SDK dependency), so the app runs fine on the grounded engine
+ * without a key.
  */
 @Injectable()
 export class LlmService {
-  private client: any = null;
-
-  get enabled(): boolean {
-    return !!(process.env.ANTHROPIC_API_KEY && process.env.LLM_MODEL);
+  private get model(): string {
+    return process.env.LLM_MODEL || 'gemini-1.5-flash';
   }
 
-  private async anthropic() {
-    if (!this.client) {
-      const mod = await import('@anthropic-ai/sdk');
-      const Anthropic = mod.default;
-      this.client = new Anthropic(); // reads ANTHROPIC_API_KEY from env
-    }
-    return this.client;
+  get enabled(): boolean {
+    return !!process.env.GEMINI_API_KEY;
   }
 
   /** Analyze real incident evidence; returns a grounded verdict, or null if disabled/failed. */
   async analyze(input: { service: string; evidence: string[] }): Promise<Verdict | null> {
     if (!this.enabled) return null;
+
     const system =
       'You are RootVector, an autonomous production-incident investigation agent. ' +
       'You are given REAL evidence gathered from a service (deployments, pull requests, errors, error rate). ' +
@@ -46,17 +41,27 @@ export class LlmService {
       input.evidence.map((e, i) => `${i + 1}. ${e}`).join('\n');
 
     try {
-      const client = await this.anthropic();
-      const res = await client.messages.create({
-        model: process.env.LLM_MODEL,
-        max_tokens: 2000,
-        system,
-        messages: [{ role: 'user', content: user }],
+      const url =
+        `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(this.model)}:generateContent` +
+        `?key=${encodeURIComponent(process.env.GEMINI_API_KEY as string)}`;
+
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: system }] },
+          contents: [{ role: 'user', parts: [{ text: user }] }],
+          generationConfig: { responseMimeType: 'application/json', maxOutputTokens: 2048, temperature: 0.2 },
+        }),
       });
-      const block = (res.content || []).find((b: any) => b.type === 'text');
-      if (!block) return null;
-      const text: string = block.text.trim().replace(/^```json\s*|\s*```$/g, '');
-      const verdict = JSON.parse(text) as Verdict;
+      if (!res.ok) return null;
+
+      const data: any = await res.json();
+      const text: string | undefined = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!text) return null;
+
+      const cleaned = text.trim().replace(/^```json\s*|\s*```$/g, '');
+      const verdict = JSON.parse(cleaned) as Verdict;
       return verdict;
     } catch {
       return null; // fall back to the grounded heuristic in AgentService

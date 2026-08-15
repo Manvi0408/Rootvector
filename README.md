@@ -115,7 +115,7 @@ Fill in `server/.env`:
 - `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` — a GitHub OAuth App (callback `http://localhost:4000/api/auth/github/callback`).
 - `GOOGLE_CLIENT_ID` — a Google OAuth Web client (origin `http://localhost:4178`).
 - `INTEGRATIONS_ENCRYPTION_KEY` — 32 bytes hex (`openssl rand -hex 32`).
-- *(optional)* `ANTHROPIC_API_KEY` + `LLM_MODEL` to enable LLM-driven investigation.
+- *(optional)* `GEMINI_API_KEY` (+ optional `LLM_MODEL`, default `gemini-1.5-flash`) to enable LLM-driven investigation via Google Gemini. Get a free key at https://aistudio.google.com/apikey.
 
 ### 2. Frontend (repo root)
 
