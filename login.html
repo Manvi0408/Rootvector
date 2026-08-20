@@ -28,13 +28,13 @@ button{font-family:inherit;cursor:pointer}
 .split{display:grid;grid-template-columns:1.05fr 1fr;min-height:100vh}
 
 /* ---------- LEFT · brand + integrations ---------- */
-.brand-side{position:relative;overflow:hidden;color:#fff;background:var(--sky);
+.brand-side{position:relative;overflow:hidden;color:#fff;
+  background:url('assets/sky-clouds.svg') center/cover no-repeat, var(--sky);
   display:flex;flex-direction:column;padding:46px 52px 52px}
 .brand-side::before{content:"";position:absolute;inset:0;pointer-events:none;
   background:
-    radial-gradient(55% 40% at 22% 12%,rgba(255,255,255,.42),transparent 70%),
-    radial-gradient(45% 38% at 82% 42%,rgba(255,255,255,.30),transparent 72%),
-    radial-gradient(80% 55% at 45% 108%,rgba(120,108,196,.55),transparent 70%)}
+    radial-gradient(55% 40% at 22% 12%,rgba(255,255,255,.20),transparent 70%),
+    radial-gradient(80% 55% at 45% 110%,rgba(120,108,196,.42),transparent 70%)}
 .brand-logo{position:relative;z-index:2;display:flex;align-items:center;gap:11px;font-weight:750;font-size:27px;letter-spacing:-.03em;color:#fff}
 .brand-logo .mk{width:33px;height:33px}
 .eyebrow{position:relative;z-index:2;margin:16px 0 0;font-size:12px;font-weight:800;letter-spacing:.17em;text-transform:uppercase;color:rgba(255,255,255,.94)}
