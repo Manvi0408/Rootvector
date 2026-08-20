@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <title>Log in · RootVector</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M25 7C25 16 18 24 8 24C8 15 15 7 25 7Z' fill='none' stroke='%231B1A17' stroke-width='2'/%3E%3Ccircle cx='9.6' cy='22.4' r='1.9' fill='%231B1A17'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M25 7C25 16 18 24 8 24C8 15 15 7 25 7Z' fill='none' stroke='%236D5AE6' stroke-width='2'/%3E%3Ccircle cx='9.6' cy='22.4' r='1.9' fill='%236D5AE6'/%3E%3C/svg%3E">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -13,10 +13,11 @@
 <style>
 :root{
   --ink:#1B1A17; --ink-2:#3C3A35; --muted:#6E6A62; --line:#E5E3EA;
-  --indigo:#6D5AE6; --indigo-600:#5B49D6; --indigo-soft:#EEEBFB;
+  --indigo:#6D5AE6; --indigo-600:#5B49D6; --navy:#231E52;
   --red:#DC2626; --green:#1F9D57;
   --serif:"Newsreader","Iowan Old Style",Palatino,Georgia,serif;
   --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --sky:linear-gradient(168deg,#F7C089 0%,#F1AE92 18%,#DBA7C0 44%,#B7A0DC 68%,#9184CE 100%);
 }
 *{box-sizing:border-box}
 html,body{height:100%}
@@ -24,28 +25,36 @@ body{margin:0;font-family:var(--sans);color:var(--ink);background:#fff;-webkit-f
 a{color:inherit;text-decoration:none}
 button{font-family:inherit;cursor:pointer}
 
-.split{display:grid;grid-template-columns:1fr 1fr;min-height:100vh}
+.split{display:grid;grid-template-columns:1.05fr 1fr;min-height:100vh}
 
-/* ---------- LEFT · brand panel ---------- */
-.brand-side{position:relative;overflow:hidden;color:#fff;
-  background:linear-gradient(115deg,rgba(28,20,14,.52),rgba(28,20,14,.14) 55%,rgba(28,20,14,0)),url('assets/nexus-bg.jpg') center/cover no-repeat;
-  display:flex;flex-direction:column;padding:44px 52px 52px}
-.brand-logo{display:flex;align-items:center;gap:9px;font-weight:650;font-size:24px;letter-spacing:-.03em;color:#fff}
-.brand-logo .mk{width:31px;height:31px}
-.brand-body{margin-top:auto;max-width:520px}
-.eyebrow{font-size:12.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;opacity:.92;margin:0 0 18px}
-.brand-body h1{font-family:var(--serif);font-weight:500;font-size:clamp(34px,4.4vw,56px);line-height:1.04;letter-spacing:-.015em;margin:0 0 20px;text-shadow:0 2px 24px rgba(0,0,0,.22)}
-.brand-sub{font-size:17px;line-height:1.5;max-width:33ch;opacity:.94;margin:0 0 26px;text-shadow:0 1px 14px rgba(0,0,0,.22)}
-.brand-list{list-style:none;margin:0;padding:0;font-size:15px;line-height:2;opacity:.96}
-.brand-list li{display:flex;align-items:baseline;gap:10px;text-shadow:0 1px 12px rgba(0,0,0,.25)}
-.brand-list .mkr{width:22px;flex:0 0 auto;text-align:left;opacity:.9;font-variant-numeric:tabular-nums}
+/* ---------- LEFT · brand + integrations ---------- */
+.brand-side{position:relative;overflow:hidden;color:#fff;background:var(--sky);
+  display:flex;flex-direction:column;padding:46px 52px 52px}
+.brand-side::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background:
+    radial-gradient(55% 40% at 22% 12%,rgba(255,255,255,.42),transparent 70%),
+    radial-gradient(45% 38% at 82% 42%,rgba(255,255,255,.30),transparent 72%),
+    radial-gradient(80% 55% at 45% 108%,rgba(120,108,196,.55),transparent 70%)}
+.brand-logo{position:relative;z-index:2;display:flex;align-items:center;gap:11px;font-weight:750;font-size:27px;letter-spacing:-.03em;color:#fff}
+.brand-logo .mk{width:33px;height:33px}
+.eyebrow{position:relative;z-index:2;margin:16px 0 0;font-size:12px;font-weight:800;letter-spacing:.17em;text-transform:uppercase;color:rgba(255,255,255,.94)}
+.integrations{position:relative;z-index:2;list-style:none;margin:30px 0 0;padding:0;display:flex;flex-direction:column}
+.integrations li{display:flex;align-items:center;gap:17px;padding:13px 2px;border-bottom:1px solid rgba(255,255,255,.20)}
+.integrations li:last-child{border-bottom:0}
+.integrations .ic{width:46px;height:46px;border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;
+  box-shadow:0 8px 20px rgba(48,24,70,.22);flex:0 0 auto}
+.integrations .ic svg{width:27px;height:27px;display:block}
+.integrations .nm{font-size:21px;font-weight:750;letter-spacing:-.01em;text-shadow:0 1px 12px rgba(60,30,80,.28)}
+.integrations .pill{margin-left:auto;display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.92);
+  color:var(--green);font-size:13.5px;font-weight:700;padding:7px 13px;border-radius:999px;box-shadow:0 4px 12px rgba(48,24,70,.16)}
+.integrations .pill .dot{width:8px;height:8px;border-radius:50%;background:var(--green)}
 
-/* ---------- RIGHT · form panel ---------- */
+/* ---------- RIGHT · form ---------- */
 .form-side{display:flex;align-items:center;justify-content:center;padding:40px 24px;background:#fff}
-.card{width:100%;max-width:420px}
-.card h2{font-family:var(--serif);font-weight:500;font-size:44px;letter-spacing:-.01em;text-align:center;margin:0 0 34px}
+.card{width:100%;max-width:430px}
+.card h2{font-family:var(--sans);font-weight:800;font-size:42px;letter-spacing:-.025em;text-align:center;color:var(--navy);margin:0 0 34px}
 .field{margin-bottom:18px}
-.field label{display:block;font-size:13px;font-weight:600;color:var(--ink);margin:0 0 8px}
+.field label{display:block;font-size:13px;font-weight:700;color:var(--ink);margin:0 0 8px}
 .control{position:relative}
 .input{width:100%;font:15px/1.4 var(--sans);color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 16px;transition:border-color .15s,box-shadow .15s}
 .input::placeholder{color:#A6A2AC}
@@ -75,18 +84,20 @@ button{font-family:inherit;cursor:pointer}
 .foot a:hover{color:var(--indigo-600)}
 .note{text-align:center;color:var(--green);font-size:13px;margin:14px 0 0;display:none}
 .note.show{display:block}
-.back{position:absolute;top:20px;left:24px;font-size:13.5px;font-weight:600;color:var(--muted);z-index:3}
-.back:hover{color:var(--ink)}
+.back{position:absolute;top:20px;left:24px;font-size:13.5px;font-weight:600;color:rgba(255,255,255,.9);z-index:3}
+.back:hover{color:#fff}
 
-@media(max-width:860px){
+@media(max-width:900px){
   .split{grid-template-columns:1fr}
-  .brand-side{min-height:230px;padding:26px 28px}
-  .brand-body{margin-top:18px;max-width:none}
-  .brand-body h1{font-size:32px;margin-bottom:12px}
-  .brand-sub{margin-bottom:0}
-  .brand-list{display:none}
+  .brand-side{padding:28px 30px 34px}
+  .integrations li{padding:10px 2px}
+  .integrations .nm{font-size:18px}
+  .integrations .ic{width:40px;height:40px}
   .form-side{padding:34px 22px 48px}
   .card h2{font-size:36px;margin-bottom:26px}
+}
+@media(max-width:560px){
+  .integrations li:nth-child(n+5){display:none}
 }
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -105,25 +116,39 @@ button{font-family:inherit;cursor:pointer}
       </svg>
       <b>rootvector</b>
     </a>
-    <div class="brand-body">
-      <p class="eyebrow">Autonomous Incident Investigation</p>
-      <h1>Find the cause.<br>Fix the system.</h1>
-      <p class="brand-sub">Trace production failures across logs, metrics, deployments, source code and team chatter.</p>
-      <ul class="brand-list">
-        <li><span class="mkr">◆</span>Northwind</li>
-        <li><span class="mkr">1.</span>Vantage</li>
-        <li><span class="mkr">2.</span>◦ Helio</li>
-        <li><span class="mkr">3.</span>Ledgerly</li>
-        <li><span class="mkr">4.</span>◎ Cobalt</li>
-        <li><span class="mkr">5.</span>Skyforge</li>
-        <li><span class="mkr">6.</span>△ Meridian</li>
-        <li><span class="mkr">7.</span>Orbital</li>
-        <li><span class="mkr">8.</span>✳ Beacon</li>
-        <li><span class="mkr">9.</span>Quanta</li>
-        <li><span class="mkr">10.</span>◇ Lumen</li>
-        <li><span class="mkr">11.</span>Fathom</li>
-      </ul>
-    </div>
+    <p class="eyebrow">Autonomous Incident Investigation</p>
+
+    <ul class="integrations">
+      <li>
+        <span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#1B1A17" d="M12 .5A11.5 11.5 0 0 0 .5 12a11.5 11.5 0 0 0 7.9 10.9c.6.1.8-.2.8-.5v-2c-3.2.7-3.9-1.4-3.9-1.4-.5-1.3-1.3-1.7-1.3-1.7-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.7 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.2 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0C17.3 5 18.3 5.3 18.3 5.3c.7 1.7.3 2.9.1 3.2.8.8 1.2 1.8 1.2 3.1 0 4.4-2.7 5.4-5.3 5.7.4.4.8 1.1.8 2.2v3.3c0 .3.2.6.8.5A11.5 11.5 0 0 0 23.5 12 11.5 11.5 0 0 0 12 .5Z"/></svg></span>
+        <span class="nm">GitHub</span>
+      </li>
+      <li>
+        <span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#362D59" d="M12 4c.5 0 1 .3 1.3.8l6.5 11.2c.5.9-.1 2-1.2 2h-3.2A12.2 12.2 0 0 0 9.3 7.5l1-1.7A14.1 14.1 0 0 1 16.9 18h.9L12 7.6 8.4 13.8a8 8 0 0 1 3 4.2H5.5c-1.1 0-1.7-1.1-1.2-2L10.7 4.8C11 4.3 11.5 4 12 4Z"/></svg></span>
+        <span class="nm">Sentry</span>
+        <span class="pill"><span class="dot"></span>Connected</span>
+      </li>
+      <li>
+        <span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#632CA6" d="M19.5 3.6 17.6 16l-2.3-1.5-1.2 2.8-1.7-.4-.9 2.9s-3.2-2-6-6.4C2.7 9.3 4.9 5.6 4.9 5.6l1.7 2.1.6-3 5-1 7.3-.1Z"/></svg></span>
+        <span class="nm">Datadog</span>
+      </li>
+      <li>
+        <span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#326CE5" d="M12 2.4l7.6 3.6L21.5 14l-5.3 6.6H7.8L2.5 14 4.4 6 12 2.4Z"/><circle cx="12" cy="12" r="2.4" fill="#fff"/><path stroke="#fff" stroke-width="1.1" stroke-linecap="round" d="M12 5.2v3.1M12 15.7v3.1M6.7 9.1l2.6 1.5M14.7 13.4l2.6 1.5M6.7 14.9l2.6-1.5M14.7 10.6l2.6-1.5"/></svg></span>
+        <span class="nm">Kubernetes</span>
+      </li>
+      <li>
+        <span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="15.4" cy="15.4" r="4.6" fill="#425CC7"/><circle cx="15.4" cy="15.4" r="1.9" fill="#fff"/><rect x="4.6" y="7.6" width="6.2" height="6.2" rx="2" transform="rotate(45 7.7 10.7)" fill="#F5A800"/></svg></span>
+        <span class="nm">OpenTelemetry</span>
+      </li>
+      <li>
+        <span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="10.4" y="3" width="3.2" height="8.7" rx="1.6" fill="#36C5F0"/><rect x="12.3" y="10.4" width="8.7" height="3.2" rx="1.6" fill="#2EB67D"/><rect x="10.4" y="12.3" width="3.2" height="8.7" rx="1.6" fill="#ECB22E"/><rect x="3" y="10.4" width="8.7" height="3.2" rx="1.6" fill="#E01E5A"/></svg></span>
+        <span class="nm">Slack</span>
+      </li>
+      <li>
+        <span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="#F46800"/><path fill="#fff" d="M12 7.2a4.8 4.8 0 1 0 4.4 2.9h-4.4V7.2Z"/></svg></span>
+        <span class="nm">Grafana</span>
+      </li>
+    </ul>
   </section>
 
   <!-- RIGHT -->
@@ -132,7 +157,7 @@ button{font-family:inherit;cursor:pointer}
       <h2 id="title">Log in</h2>
 
       <div class="field">
-        <label for="email">Email</label>
+        <label for="email">Work email</label>
         <div class="control">
           <input class="input" id="email" type="email" autocomplete="email" placeholder="you@company.com" required>
         </div>
@@ -155,7 +180,7 @@ button{font-family:inherit;cursor:pointer}
 
       <button class="btn-primary" id="submit" type="submit">Log in →</button>
 
-      <div class="divide" id="divide">Or login via</div>
+      <div class="divide" id="divide">Or log in with</div>
 
       <button class="oauth" id="google" type="button">
         <svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.3-.4-3.5Z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7Z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.6 39.6 16.2 44 24 44Z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3a12 12 0 0 1-4.1 5.6l6.2 5.2C41.6 35.9 44 30.5 44 24c0-1.3-.1-2.3-.4-3.5Z"/></svg>
@@ -230,7 +255,7 @@ $("card").addEventListener("submit", async e => {
     } else {
       noteErr("Something went wrong signing in.");
     }
-  } catch(err){ ready(); noteErr("Can't reach the RootVector server on :4000. Start the backend (npm run start:dev)."); }
+  } catch(err){ ready(); noteErr("Can't reach the RootVector server. Please try again."); }
 });
 
 /* Google → popup gives an access token → backend verifies it via userinfo */
@@ -254,7 +279,7 @@ $("google").addEventListener("click", () => {
             body: JSON.stringify({ accessToken: resp.access_token })
           });
           if(r.ok){ goApp(); } else { ready(); noteErr("Google sign-in failed on the server."); }
-        } catch(e){ ready(); noteErr("Can't reach the RootVector server on :4000."); }
+        } catch(e){ ready(); noteErr("Can't reach the RootVector server."); }
       }
     });
   }
