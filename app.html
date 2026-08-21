@@ -272,8 +272,8 @@ button{font-family:inherit;cursor:pointer}
   <aside class="side" id="side">
     <a class="nav" href="#/overview" data-k="overview"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9 21v-6h6v6"/></svg>Overview</a>
     <a class="nav" href="#/investigations" data-k="investigations"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>Investigations<span class="navbadge" id="navInv"></span></a>
-    <a class="nav" href="#/services" data-k="services"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg>Services<span class="navbadge" id="navSvc"></span></a>
-    <a class="nav" href="#/history" data-k="history"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></svg>History<span class="navbadge" id="navHist"></span></a>
+    <a class="nav" href="#/services" data-k="services"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg>Services</a>
+    <a class="nav" href="#/history" data-k="history"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></svg>History</a>
     <a class="nav" href="#/repositories" data-k="repositories"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4v14a2 2 0 0 0 2 2h14"/><rect x="8" y="3" width="12" height="12" rx="2"/></svg>Repositories</a>
     <a class="nav" href="#/integrations" data-k="integrations"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 7 3 12l5 5M16 7l5 5-5 5M13 4l-2 16"/></svg>Integrations</a>
     <div class="spacer"></div>
@@ -421,7 +421,6 @@ async function loadOverview(){
   const resolved=all.filter(i=>i.status==='resolved').length;
   set('kActive', active.length); set('kServices', S.servicesMonitored);
   set('kAlerts', S.alertsAnalyzed); set('kResolved', resolved); set('kDeploys', S.recentDeployments);
-  const bb=$('bellBadge'); if(bb){ bb.textContent=active.length; bb.hidden=active.length===0; }
 
   const stt=$('ovStatus');
   if(stt){ if(active.length){ stt.style.color='#DC2626'; stt.innerHTML=`<span class="dot" style="background:#DC2626"></span> ${active.length} active incident${active.length>1?'s':''}`; }
@@ -734,6 +733,7 @@ function route(){
   const parts = location.hash.replace('#/','').split('/');
   const k = parts[0] || 'overview';
   const navKey = (k==='investigations') ? 'investigations' : (PAGES[k] ? k : 'overview');
+  if(k==='investigations' && typeof rvClearUnread==='function') rvClearUnread(); // viewed → clear the "new" number
   document.querySelectorAll('.topnav a').forEach(a=>a.classList.toggle('on', a.getAttribute('href')==='#/'+navKey));
   document.querySelectorAll('.side a.nav').forEach(a=>a.classList.toggle('on', a.dataset.k===navKey));
   if(k==='investigations' && parts[1]){ $('main').innerHTML = pageInvestigation(parts[1]); window.scrollTo(0,0); return; }
@@ -1242,16 +1242,17 @@ function loadSettings(){
 
 /* ---------- notifications (live) ---------- */
 function setNavBadge(id,n){ const el=document.getElementById(id); if(!el) return; if(n>0){ el.textContent=n>99?'99+':n; el.style.display='inline-flex'; } else { el.style.display='none'; } }
-async function updateBell(){
-  try{
-    const list=await (await rvApi('/notifications')).json();
-    const active=(list||[]).filter(i=>i.status!=='resolved'&&i.status!=='rejected').length;
-    const done=(list||[]).filter(i=>i.status==='resolved'||i.status==='rejected').length;
-    const svcs=new Set((list||[]).map(i=>i.service).filter(Boolean)).size;
-    const b=$('bellBadge'); if(b){ b.textContent=active>99?'99+':active; b.hidden = active===0; }
-    setNavBadge('navInv',active); setNavBadge('navSvc',svcs); setNavBadge('navHist',done);
-  }catch(e){}
+/* Unread notifications: the badge only shows the count of NEW incidents since
+   you last looked, and clears the moment you open the notifications (or go to
+   Investigations) to see what's new. */
+let rvUnread = 0;
+function rvRenderUnread(){
+  const b=$('bellBadge'); if(b){ b.textContent=rvUnread>99?'99+':rvUnread; b.hidden = rvUnread===0; }
+  setNavBadge('navInv', rvUnread);
 }
+function rvBumpUnread(){ rvUnread++; rvRenderUnread(); }
+function rvClearUnread(){ if(rvUnread!==0){ rvUnread=0; rvRenderUnread(); } }
+function updateBell(){ rvRenderUnread(); } // kept for existing callers
 async function loadNotifBody(){
   const body=document.getElementById('notifBody'); if(!body) return;
   try{
@@ -1276,6 +1277,7 @@ async function toggleNotif(e){
   p.style.width='340px'; p.style.right='64px'; p.style.top='60px';
   p.innerHTML='<div class="menu-head" style="border-bottom:1px solid var(--line);padding:10px 10px 12px"><div class="nm">Notifications</div></div><div id="notifBody"><div class="muted" style="padding:10px">Loading…</div></div>';
   document.querySelector('.topbar').appendChild(p);
+  rvClearUnread();   // opened → they've seen what's new, remove the number
   loadNotifBody();
 }
 function rvCloseNotif(){ const p=document.getElementById('notifPanel'); if(p) p.remove(); }
@@ -1291,8 +1293,8 @@ function startNotifStream(){
       let inc; try{ inc=JSON.parse(ev.data); }catch(e){ return; }
       if(!inc || !inc.key) return;
       toast('🚨 New incident · '+inc.title);
-      updateBell();
-      if(document.getElementById('notifPanel')) loadNotifBody();
+      if(document.getElementById('notifPanel')) loadNotifBody();   // panel open → they're already looking
+      else rvBumpUnread();                                          // otherwise flag it as new
       if(currentKey()==='overview' && typeof loadOverview==='function') loadOverview();
     };
   }catch(e){}
@@ -1359,9 +1361,7 @@ async function rvSignOut(){
   rvRenderUser();
   if(!location.hash) location.hash = '#/overview';
   route();
-  updateBell();
-  setInterval(updateBell, 25000);   // fallback resync (e.g. after resolutions)
-  startNotifStream();               // live push for brand-new incidents
+  startNotifStream();               // live push drives the unread notification badge
 })();
 </script>
 </body>
