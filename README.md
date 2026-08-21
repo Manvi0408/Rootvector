@@ -1,5 +1,6 @@
-# RootVector
-
+<p align="center">
+  <img src="./img.png" alt="RootVector Dashboard" width="100%">
+</p>
 **An AI production-incident investigation agent.** RootVector connects to your engineering stack, detects production incidents from real monitoring signals, and runs an autonomous investigation — correlating deployments, pull requests, errors and traces — to surface a **root cause with evidence and a confidence score**, then recommends a fix that a human approves before anything is executed.
 
 > Find the cause. Verify the evidence. Fix the system.
@@ -18,22 +19,44 @@ When production breaks, one engineer drops everything and spends **30–60 minut
 
 ```mermaid
 flowchart LR
-  U([User]) --> FE["Frontend<br/>static HTML/CSS/JS<br/>marketing · auth · dashboard"]
-  FE -->|"REST + SSE<br/>httpOnly cookie"| BE
+  U([Engineer]) --> FE["Frontend<br/>Static HTML/CSS/JS<br/>Marketing · Auth · Dashboard"]
 
-  subgraph BE["NestJS backend"]
+  FE -->|"REST + SSE<br/>httpOnly Cookie"| BE
+
+  subgraph BE["NestJS Backend"]
     direction TB
-    A["Auth<br/>Google · GitHub · email · JWT"]
-    I["Integrations<br/>GitHub · Sentry<br/>encrypted tokens"]
-    N["Incidents<br/>pipeline · AI agent · SSE · webhooks"]
+
+    A["Authentication<br/>Google · GitHub · Email · JWT"]
+
+    I["Integrations<br/>GitHub · Sentry · Datadog · Grafana<br/>Encrypted Tokens · Webhooks"]
+
+    N["Incident Engine<br/>Detection · Investigation<br/>Remediation · Verification · SSE"]
+
+    A --> I
+    I --> N
   end
 
   BE --> DB[("PostgreSQL<br/>Prisma")]
-  GH["GitHub"] -->|"OAuth + webhooks"| I
-  SEN["Sentry"] -->|"signed webhooks"| N
-  N -.->|"optional"| LLM[["LLM<br/>investigation agent"]]
-```
 
+  GH["GitHub"] -->|"OAuth + Webhooks"| I
+  SEN["Sentry"] -->|"Signed Webhooks"| N
+  DD["Datadog"] -->|"Alert Webhooks"| N
+  GF["Grafana"] -->|"Alert Webhooks"| N
+
+  N --> AGENT["AI Investigation Agent<br/>Evidence · Correlation<br/>Hypotheses · Confidence"]
+
+  AGENT -.->|"Optional"| LLM["LLM<br/>Gemini"]
+
+  AGENT --> RCA["Root Cause + Evidence<br/>Confidence Score"]
+
+  RCA --> FIX["Recommended Fix<br/>Human Approval"]
+
+  FIX --> REM["Remediation"]
+
+  REM --> VERIFY["Recovery Verification<br/>Metrics + Monitoring"]
+
+  VERIFY --> N
+```
 **Layers**
 
 - **Frontend** — static HTML/CSS/JS (no build): marketing site, auth pages, single-page dashboard. Talks to the API over REST + Server-Sent Events with an httpOnly session cookie.
@@ -41,9 +64,6 @@ flowchart LR
 - **Data** — PostgreSQL via Prisma: users, integrations, incidents, investigation events, activity, webhook deliveries.
 - **AI agent** — gathers real evidence and produces hypotheses, a root cause and a recommendation; uses an LLM when configured, and a grounded correlation engine otherwise.
 
-**The platform — from signals to autonomous investigation to a human-approved fix:**
-
-![Platform architecture](assets/platform-diagram.jpeg)
 
 ## Integrations
 
@@ -150,10 +170,3 @@ MIT
 
 ---
 
-## Project status
-
-> 🚧 &nbsp;**This project is currently in progress and not fully completed.**
->
-> **Working:** real authentication (Google · GitHub · email), the authenticated profile, GitHub integration (repositories + live activity), the incident pipeline, the AI investigation agent, the live investigation UI (SSE), human approval, remediation and recovery verification.
->
-> **Still to do:** full **Sentry** wiring, and the **Kubernetes**, **OpenTelemetry**, **Slack** and **Grafana** integrations (currently scaffolded / *Coming soon*), plus real-time GitHub webhooks. More to come.
