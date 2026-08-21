@@ -591,14 +591,13 @@ function delta7(ts){ const now=Date.now(),d=864e5*7; let cur=0,prev=0; (ts||[]).
 function distinctDelta7(incidents){ const now=Date.now(),d=864e5*7,a=new Set(),b=new Set(); (incidents||[]).forEach(i=>{const t=new Date(i.startedAt).getTime(); if(t>now-d)a.add(i.service); else if(t>now-2*d)b.add(i.service);}); return b.size===0?(a.size>0?100:0):Math.round((a.size-b.size)/b.size*100); }
 /* daily counts over the last 7 days → sparkline */
 function spark7(ts,color){ const now=Date.now(),bk=new Array(7).fill(0); (ts||[]).forEach(x=>{const days=Math.floor((now-new Date(x).getTime())/864e5); if(days>=0&&days<7)bk[6-days]++;}); return ovSpark(bk,color); }
-/* distinct fallback trend shapes for when the real 7-day series is too sparse
-   to differ (e.g. all data clustered in one day locally). */
-const KWAVE=[[3,5,4,6,5,7,6,8],[6,5,7,6,8,7,9,8],[5,6,5,4,6,5,7,6],[4,3,5,4,6,5,7,9],[7,6,8,7,9,8,7,9]];
+/* KPI sparkline = the REAL last-7-days daily counts. No data → a clean flat line. */
+function ovSparkFlat(color){ const w=64,h=20; return `<svg class="ov-spark" viewBox="0 0 ${w} ${h}"><path d="M0 ${h/2} L${w} ${h/2}" fill="none" stroke="${color}" stroke-width="1.6" opacity=".4"/></svg>`; }
 function sparkFor(ts,idx,color){
   const now=Date.now(),bk=new Array(7).fill(0);
   (ts||[]).forEach(x=>{const days=Math.floor((now-new Date(x).getTime())/864e5); if(days>=0&&days<7)bk[6-days]++;});
-  const nonZero=bk.filter(v=>v>0).length;                 // real series only if it actually has spread
-  return ovSpark(nonZero>=3 ? bk : KWAVE[idx%KWAVE.length], color);
+  if(bk.reduce((a,b)=>a+b,0)===0) return ovSparkFlat(color);  // nothing happened → flat line
+  return ovSpark(bk, color);
 }
 function ovDeltaHtml(pct,goodWhenDown){ const good = pct===0?null:(goodWhenDown? pct<0 : pct>0); const color = pct===0?'#9AA1AD':(good?'#16A34A':'#DC2626'); const arrow=pct>0?'↑':pct<0?'↓':''; return `<span style="color:${color};font-weight:700">${arrow}${Math.abs(pct)}%</span> <span style="color:#9AA1AD">vs last 7 days</span>`; }
 function ovChart(incidents){
