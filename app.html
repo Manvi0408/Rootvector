@@ -917,14 +917,18 @@ async function runGuidedInvestigation(){
   giSet(`<div class="gi-scan"><div class="gi-spin"></div><h3>Scanning your connected stacks…</h3><p class="muted">GitHub · Sentry · Deployments</p></div>`);
   await giSleep(1700);
   giInc = await giPick();
-  if(!giInc){ giSet(`<h3>All clear</h3><p class="muted" style="margin-top:8px">No open problems found across your connected stacks right now.</p><div class="gi-act"><button class="btn-approve" onclick="giClose()">Close</button></div>`); return; }
+  if(!giInc){ giSet(`<h3>All clear — no open incidents</h3>
+    <p class="muted" style="margin-top:8px">There are no real incidents to investigate right now. RootVector opens one automatically when a <b>real signal</b> arrives:</p>
+    <ul class="muted" style="margin:10px 0 0;padding-left:18px;line-height:1.7"><li>a <b>GitHub</b> issue, or a failed workflow / check (needs the webhook connected)</li><li>a <b>Sentry</b> production error</li></ul>
+    <p class="muted" style="margin-top:12px;font-size:12.5px">Just exploring? Use <b>⚡ Simulate incident</b> on the Overview — that one is clearly a DEMO.</p>
+    <div class="gi-act"><button class="btn-approve" onclick="giClose()">Close</button></div>`); return; }
   giKey=giInc.key;
   giShowDetected();
 }
 async function giPick(){
-  // Prefer a real OPEN incident (e.g. from a GitHub webhook or Sentry); else run the pipeline.
-  try{ const list=await (await rvApi('/incidents')).json(); const open=(list||[]).find(i=>i.status!=='resolved'); if(open) return open; }catch(e){}
-  try{ const r=await rvApi('/dev/simulate-incident',{method:'POST'}); return await r.json(); }catch(e){ return null; }
+  // Only investigate a REAL open incident (from a GitHub webhook or Sentry).
+  // Never fabricate a demo incident here — the Simulate button is the only demo path.
+  try{ const list=await (await rvApi('/incidents')).json(); return (list||[]).find(i=>i.status!=='resolved' && !i.isDemo) || null; }catch(e){ return null; }
 }
 function giShowDetected(){
   const i=giInc, src=(i.source||'system').toUpperCase();
