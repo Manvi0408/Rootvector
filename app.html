@@ -469,23 +469,20 @@ function ovHintInvestigations(){
   setTimeout(()=>nav.classList.remove('nav-pulse'), 3200); // pulse ~3×, keep the underline hint
 }
 async function loadOverview(){
-  let d, all, integ;
-  try{ [d, all, integ] = await Promise.all([
-    (await rvApi('/overview')).json(),
-    (await rvApi('/incidents')).json(),
-    rvApi('/integrations').then(r=>r.json()).catch(()=>[])
-  ]); }catch(e){ return; }
+  let d, all;
+  try{ [d, all] = await Promise.all([ (await rvApi('/overview')).json(), (await rvApi('/incidents')).json() ]); }catch(e){ return; }
   all = all || [];
-  // Onboarding only when NOTHING is connected. Connected to ANY tool
-  // (GitHub, Sentry, Datadog, Grafana, Kubernetes, OpenTelemetry, Slack) → Welcome back.
-  const connected = (integ||[]).some(p=>p.status==='connected') || d.githubConnected || all.some(i=>!i.isDemo);
+  // The only real PER-USER connection is the user's own GitHub. (Sentry/Datadog/
+  // etc. are configured server-side, so they look "connected" for everyone — they
+  // must NOT count here.) No GitHub connected yet → first-time onboarding.
+  const connected = !!d.githubConnected;
   const main=$('ovMain'), onboard=$('ovOnboard'), greet=$('ovGreet'), title=$('ovTitle'), status=$('ovStatus'), acts=$('ovActions');
   if(!connected){
     if(main) main.hidden=true; if(onboard) onboard.hidden=false; if(acts) acts.style.display='none';
     if(greet) greet.style.display='none';
-    if(title) title.textContent="Hello, let’s get started 👋";
+    if(title) title.textContent="Hello "+rvFirstName()+", let’s get started 👋";
     if(status){ status.style.color='var(--muted)'; status.innerHTML='<span></span>'; }
-    ovTypewriter(status, 'Connect any of your stack from the Integrations to begin →', ()=>{ ovHintInvestigations(); });
+    ovTypewriter(status, 'Connect your GitHub from Integrations to see your real incidents →', ()=>{ ovHintInvestigations(); });
     return;   // skip filling KPIs/charts while empty
   }
   if(main) main.hidden=false; if(onboard) onboard.hidden=true; if(acts) acts.style.display='';
