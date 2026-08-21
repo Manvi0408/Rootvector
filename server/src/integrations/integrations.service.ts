@@ -93,13 +93,15 @@ export class IntegrationsService {
         return { ...p, status: row ? row.status : 'disconnected', externalLogin: row?.externalLogin ?? null, connectedAt: row?.createdAt ?? null, lastEventAt: row?.lastEventAt ?? null };
       }
       if (p.key === 'sentry') {
-        return { ...p, status: sentryConfigured ? 'connected' : 'disconnected', externalLogin: null, connectedAt: null, lastEventAt: lastByProvider.sentry };
+        // "connected" only once it has actually delivered a verified event —
+        // a server secret being set doesn't mean the user connected it.
+        return { ...p, status: lastByProvider.sentry ? 'connected' : 'disconnected', ready: sentryConfigured, externalLogin: null, connectedAt: null, lastEventAt: lastByProvider.sentry };
       }
       if (p.key === 'slack') {
         return { ...p, status: slackConfigured ? 'connected' : 'disconnected', externalLogin: null, connectedAt: null, lastEventAt: null };
       }
-      // datadog / kubernetes / opentelemetry / grafana → webhook, ready once ALERT_WEBHOOK_SECRET is set
-      return { ...p, status: alertConfigured ? 'connected' : 'disconnected', externalLogin: null, connectedAt: null, lastEventAt: lastByProvider[p.key] ?? null };
+      // datadog / kubernetes / opentelemetry / grafana → "connected" only after a real alert arrives.
+      return { ...p, status: lastByProvider[p.key] ? 'connected' : 'disconnected', ready: alertConfigured, externalLogin: null, connectedAt: null, lastEventAt: lastByProvider[p.key] ?? null };
     });
   }
 
