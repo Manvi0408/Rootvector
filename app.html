@@ -469,12 +469,16 @@ function ovHintInvestigations(){
   setTimeout(()=>nav.classList.remove('nav-pulse'), 3200); // pulse ~3×, keep the underline hint
 }
 async function loadOverview(){
-  let d, all;
-  try{ [d, all] = await Promise.all([ (await rvApi('/overview')).json(), (await rvApi('/incidents')).json() ]); }catch(e){ return; }
+  let d, all, integ;
+  try{ [d, all, integ] = await Promise.all([
+    (await rvApi('/overview')).json(),
+    (await rvApi('/incidents')).json(),
+    rvApi('/integrations').then(r=>r.json()).catch(()=>[])
+  ]); }catch(e){ return; }
   all = all || [];
-  // First-time state: the user hasn't connected GitHub and there's no real
-  // (non-demo) incident yet → show onboarding. Demo incidents don't count.
-  const connected = d.githubConnected || all.some(i=>!i.isDemo);
+  // Onboarding only when NOTHING is connected. Connected to ANY tool
+  // (GitHub, Sentry, Datadog, Grafana, Kubernetes, OpenTelemetry, Slack) → Welcome back.
+  const connected = (integ||[]).some(p=>p.status==='connected') || d.githubConnected || all.some(i=>!i.isDemo);
   const main=$('ovMain'), onboard=$('ovOnboard'), greet=$('ovGreet'), title=$('ovTitle'), status=$('ovStatus'), acts=$('ovActions');
   if(!connected){
     if(main) main.hidden=true; if(onboard) onboard.hidden=false; if(acts) acts.style.display='none';
