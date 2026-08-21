@@ -674,8 +674,12 @@ async function loadIntegrations(){
           : `<button class="btn-primary" onclick="sentrySetup()">Set up Sentry</button>`;
       } else if(p.style==='webhook'){
         const url = base + p.webhookPath;
-        foot = `<span class="int-sub">${connected?('Webhook ready'+(p.lastEventAt?' · last alert '+timeAgo(p.lastEventAt):' · waiting for alerts')):'Needs ALERT_WEBHOOK_SECRET'}</span>
-          <button class="${connected?'btn-outline':'btn-primary'}" onclick="webhookSetup('${p.key}','${p.name}','${url}')">${connected?'Webhook URL':'Set up webhook'}</button>`;
+        const ready = connected || p.ready;
+        const label = connected
+          ? ('Connected'+(p.lastEventAt?' · last alert '+timeAgo(p.lastEventAt):''))
+          : (p.ready ? 'Ready · waiting for alerts' : 'Add ALERT_WEBHOOK_SECRET to enable');
+        foot = `<span class="int-sub">${label}</span>
+          <button class="${ready?'btn-outline':'btn-primary'}" onclick="webhookSetup('${p.key}','${p.name}','${url}')">Webhook URL</button>`;
       } else if(p.style==='outbound'){
         foot = connected
           ? `<span class="int-sub">Notifications on · posts new incidents to Slack</span>`
@@ -685,7 +689,7 @@ async function loadIntegrations(){
       }
       return `<div class="int-card"><div class="int-top"><span class="int-logo">${brand}</span>
         <div><div class="int-name">${p.name}</div><div class="int-blurb">${p.blurb}</div></div>
-        ${connected?'<span class="int-badge on">Connected</span>':''}</div>
+        ${connected?'<span class="int-badge on">Connected</span>':(p.ready&&p.style==='webhook'?'<span class="int-badge on" style="background:#EEF2FF;color:#2563EB">Ready</span>':'')}</div>
         <div class="int-foot">${foot}</div></div>`;
     }).join('');
   }catch(e){ el.innerHTML='<div class="muted">Could not load integrations.</div>'; }
