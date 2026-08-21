@@ -268,6 +268,7 @@ button{font-family:inherit;cursor:pointer}
     <a class="nav" href="#/overview" data-k="overview"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9 21v-6h6v6"/></svg>Overview</a>
     <a class="nav" href="#/investigations" data-k="investigations"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>Investigations</a>
     <a class="nav" href="#/services" data-k="services"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg>Services</a>
+    <a class="nav" href="#/history" data-k="history"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></svg>History</a>
     <a class="nav" href="#/repositories" data-k="repositories"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4v14a2 2 0 0 0 2 2h14"/><rect x="8" y="3" width="12" height="12" rx="2"/></svg>Repositories</a>
     <a class="nav" href="#/integrations" data-k="integrations"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 7 3 12l5 5M16 7l5 5-5 5M13 4l-2 16"/></svg>Integrations</a>
     <div class="spacer"></div>
@@ -301,7 +302,8 @@ const ICN = {
   clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
   xcircle:'<circle cx="12" cy="12" r="9"/><path d="m15 9-6 6M9 9l6 6"/>',
   search:'<circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>',
-  info:'<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'
+  info:'<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>',
+  check:'<circle cx="12" cy="12" r="9"/><path d="m8.5 12 2.5 2.5 4.5-5"/>'
 };
 const B = {
   github:'<svg viewBox="0 0 24 24"><path fill="#181717" d="M12 .5A11.5 11.5 0 0 0 .5 12a11.5 11.5 0 0 0 7.9 10.9c.6.1.8-.2.8-.5v-2c-3.2.7-3.9-1.4-3.9-1.4-.5-1.3-1.3-1.7-1.3-1.7-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.7 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.2 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0C17.3 5 18.3 5.3 18.3 5.3c.7 1.7.3 2.9.1 3.2.8.8 1.2 1.8 1.2 3.1 0 4.4-2.7 5.4-5.3 5.7.4.4.8 1.1.8 2.2v3.3c0 .3.2.6.8.5A11.5 11.5 0 0 0 23.5 12 11.5 11.5 0 0 0 12 .5Z"/></svg>',
@@ -517,11 +519,24 @@ function webhookSetup(key,name,url){
 function slackSetup(){
   const ov=document.createElement('div'); ov.className='modal-ov'; ov.id='slackModal';
   ov.innerHTML=`<div class="modal" style="max-width:520px"><h3>Connect Slack</h3>
-    <p class="muted" style="padding:0">RootVector posts every new incident to a Slack channel via an Incoming Webhook.</p>
-    <ol class="muted" style="margin:10px 0 0;padding-left:18px;line-height:1.75;font-size:13px"><li>In Slack, create an <b>Incoming Webhook</b> for your channel.</li><li>Set <code>SLACK_WEBHOOK_URL</code> to that URL in the backend env.</li><li>Restart / redeploy — new incidents will post to Slack.</li></ol>
-    <div class="modal-act"><button class="btn-approve" onclick="document.getElementById('slackModal').remove()">Done</button></div></div>`;
+    <p class="muted" style="padding:0">RootVector posts every new incident to your Slack channel via an Incoming Webhook.</p>
+    <ol class="muted" style="margin:10px 0 12px;padding-left:18px;line-height:1.75;font-size:12.5px"><li>In Slack → <b>Apps → Incoming Webhooks</b>, add one for your channel.</li><li>Copy its URL (starts with <code>https://hooks.slack.com/services/…</code>) and paste it below.</li></ol>
+    <input id="slackUrl" placeholder="https://hooks.slack.com/services/..." style="width:100%;border:1px solid var(--line);border-radius:9px;padding:11px;font:inherit;font-size:13px">
+    <p class="err" id="slackErr" style="display:none;color:var(--red);font-size:13px;margin:8px 2px 0"></p>
+    <div class="modal-act"><button class="btn-reject" onclick="document.getElementById('slackModal').remove()" style="flex:1">Cancel</button><button class="btn-approve" onclick="connectSlack()">Connect Slack</button></div></div>`;
   ov.addEventListener('click',e=>{ if(e.target===ov) ov.remove(); });
   document.body.appendChild(ov);
+  setTimeout(()=>{const i=document.getElementById('slackUrl'); if(i) i.focus();},40);
+}
+async function connectSlack(){
+  const url=(document.getElementById('slackUrl')||{}).value||'';
+  const err=document.getElementById('slackErr');
+  if(!/^https:\/\/hooks\.slack\.com\/services\//.test(url.trim())){ if(err){ err.textContent='Enter a valid Slack Incoming Webhook URL.'; err.style.display='block'; } return; }
+  try{
+    const r=await rvApi('/integrations/slack/connect',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:url.trim()})});
+    if(r.ok){ const m=document.getElementById('slackModal'); if(m) m.remove(); toast('Slack connected — new incidents will post there'); loadIntegrations(); }
+    else { if(err){ err.textContent='Could not connect Slack. Check the URL.'; err.style.display='block'; } }
+  }catch(e){ if(err){ err.textContent='Could not reach the server.'; err.style.display='block'; } }
 }
 function sentrySetup(){
   const ov=document.createElement('div'); ov.className='modal-ov'; ov.id='sentryModal';
@@ -568,12 +583,58 @@ async function loadRepos(){
     </tbody></table></div>`;
 }
 
+/* ---------- services (real, from incidents) ---------- */
+function pageServices(){
+  setTimeout(loadServices,0);
+  return `<h1 class="h1">Services</h1>
+  <div class="statusline"><span class="dot"></span> Health across the services RootVector is watching</div>
+  <div id="svcList"><div class="muted">Loading services…</div></div>`;
+}
+async function loadServices(){
+  const el=document.getElementById('svcList'); if(!el) return;
+  let list; try{ list=await (await rvApi('/incidents')).json(); }catch(e){ el.innerHTML='<div class="muted">Could not load.</div>'; return; }
+  const by={};
+  (list||[]).forEach(i=>{ const s=i.service||'unknown'; const o=(by[s]=by[s]||{name:s,total:0,open:0,last:null,src:i.source}); o.total++; if(i.status!=='resolved'&&i.status!=='rejected') o.open++; if(!o.last||new Date(i.startedAt)>new Date(o.last)) o.last=i.startedAt; });
+  const rows=Object.values(by).sort((a,b)=>b.open-a.open || new Date(b.last)-new Date(a.last));
+  if(!rows.length){ el.innerHTML=`<div class="health"><div class="empty" style="padding:40px 6px"><div class="orb">${svg(ICN.cube)}</div><h4>No services yet</h4><p>Services appear here as soon as an incident is detected from any connected stack (GitHub, Sentry, Datadog, Grafana…).</p><a class="btn-outline" href="#/integrations">Connect your stack</a></div></div>`; return; }
+  el.innerHTML=`<div class="health"><table class="tbl">
+    <thead><tr><th>Service</th><th>Status</th><th>Open</th><th>Total incidents</th><th>Last incident</th></tr></thead>
+    <tbody>${rows.map(r=>{const bad=r.open>0;return `<tr>
+      <td><div class="svc">${svg(ICN.cube)} ${r.name}${r.src?`<span class="tag">${String(r.src).toUpperCase()}</span>`:''}</div></td>
+      <td>${bad?'<span class="badge-h" style="color:#DC2626"><span class="dot" style="background:#DC2626;box-shadow:0 0 0 3px rgba(220,38,38,.15)"></span>Degraded</span>':'<span class="badge-h"><span class="dot"></span>Healthy</span>'}</td>
+      <td>${r.open}</td><td>${r.total}</td><td>${r.last?timeAgo(r.last):'—'}</td></tr>`;}).join('')}
+    </tbody></table></div>`;
+}
+
+/* ---------- history (resolved + cancelled) ---------- */
+function pageHistory(){
+  setTimeout(loadHistory,0);
+  return `<h1 class="h1">History</h1>
+  <div class="statusline"><span class="dot"></span> Completed incidents — solved or cancelled</div>
+  <div id="histList"><div class="muted">Loading history…</div></div>`;
+}
+async function loadHistory(){
+  const el=document.getElementById('histList'); if(!el) return;
+  let list; try{ list=await (await rvApi('/incidents')).json(); }catch(e){ el.innerHTML='<div class="muted">Could not load.</div>'; return; }
+  const done=(list||[]).filter(i=>i.status==='resolved'||i.status==='rejected').sort((a,b)=>new Date(b.resolvedAt||b.startedAt)-new Date(a.resolvedAt||a.startedAt));
+  if(!done.length){ el.innerHTML=`<div class="health"><div class="empty" style="padding:40px 6px"><div class="orb">${svg(ICN.check)}</div><h4>No history yet</h4><p>Once you approve a fix (solved) or cancel a recommendation, it's recorded here.</p><a class="btn-outline" href="#/investigations">Go to investigations</a></div></div>`; return; }
+  el.innerHTML=`<div class="health">${done.map(i=>{
+    const solved=i.status==='resolved';
+    const outcome=solved?'✓ You solved the problem':'✕ You cancelled the request';
+    const col=solved?'#1F9D57':'#8A8F9A';
+    return `<div class="act" style="cursor:pointer" onclick="location.hash='#/investigations/${i.key}'">
+      <span class="ic" style="color:${col}">${svg(solved?ICN.check:ICN.xcircle)}</span>
+      <div class="m"><div class="tt">${i.title} ${i.isDemo?'<span class="tag">DEMO</span>':''}</div>
+        <div class="sub">${i.key} · ${i.service} · <b style="color:${col}">${outcome}</b></div></div>
+      <div class="time">${timeAgo(i.resolvedAt||i.startedAt)}</div></div>`;
+  }).join('')}</div>`;
+}
+
 const PAGES = {
   overview: pageOverview,
   investigations: () => pageInvestigationsList(),
-  services: () => pageEmpty('Services', ICN.cube, 'No services connected yet',
-    "Connect GitHub and monitoring to start tracking service health.",
-    '<a class="btn-outline" href="#/integrations">Connect your stack</a>'),
+  services: pageServices,
+  history: pageHistory,
   repositories: pageRepositories,
   integrations: pageIntegrations,
   settings: pageSettings,
@@ -781,7 +842,7 @@ function ipResultRec(e,d){
   box.innerHTML=`<div class="ip-block-h">Recommended fix</div>
     <div class="ip-rec">${hlTokens(e.message)}${d.rationale?`<div class="ip-rec-m">${hlTokens(d.rationale)}</div>`:''}<div class="ip-rec-tags"><span>Risk: ${d.risk||'Low'}</span><span>Reversible</span></div></div>
     <div class="ip-approve-note">⏸ <b>Human approval required.</b> RootVector will not execute anything until you approve.</div>
-    <div class="ip-act"><button class="btn-reject" onclick="toast('Recommendation rejected')">Reject</button><button class="btn-approve" id="invApprove" onclick="confirmApprove()">✓ Approve &amp; Execute</button></div>`;
+    <div class="ip-act"><button class="btn-reject" onclick="rejectInvestigation()">Reject</button><button class="btn-approve" id="invApprove" onclick="confirmApprove()">✓ Approve &amp; Execute</button></div>`;
   r.appendChild(box);
   const st=$('invStatus'); if(st && !st.classList.contains('done')){ st.className='ip-status await'; st.innerHTML='<span class="ip-dot"></span> Awaiting your approval'; }
 }
@@ -884,6 +945,14 @@ async function doApprove(key){
   invTlRow('run','→', new Date().toISOString(), 'Rollback initiated…');
   try{ await rvApi('/incidents/'+key+'/approve',{method:'POST'}); }catch(e){}
   // the approve endpoint writes remediation/verification/resolved events → SSE streams them in
+}
+async function rejectInvestigation(){
+  const key = location.hash.split('/')[2]; if(!key) return;
+  try{ await rvApi('/incidents/'+key+'/reject',{method:'POST'}); }catch(e){}
+  toast('Request cancelled — recorded in History');
+  const st=$('invStatus'); if(st){ st.className='ip-status'; st.style.background='#F1F1F4'; st.style.color='#6E6A62'; st.innerHTML='<span class="ip-dot" style="background:#9AA0AE"></span> Cancelled'; }
+  const act=$('invActions'); if(act) act.innerHTML='<div class="ip-solve-row"><span class="ip-sub-ic" style="background:#F1F1F4;color:#8A8F9A">✕</span><span>You cancelled the request — no action was taken.</span></div>';
+  if(typeof updateBell==='function') updateBell();
 }
 
 /* ---------- investigations list ---------- */

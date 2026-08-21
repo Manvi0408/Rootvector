@@ -98,6 +98,12 @@ export class IncidentsController {
     return this.incidents.approve(key);
   }
 
+  /** Human rejected the recommendation → recorded in History as cancelled. */
+  @Post('incidents/:key/reject')
+  reject(@Param('key') key: string) {
+    return this.incidents.reject(key);
+  }
+
   /** DEV/DEMO: simulate an incident, then let the agent investigate it live. */
   @Post('dev/simulate-incident')
   async simulate() {

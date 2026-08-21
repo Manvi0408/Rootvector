@@ -1,10 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { notifySlack } from '../common/notify';
+import { postSlack } from '../common/notify';
+import { IntegrationsService } from '../integrations/integrations.service';
 
 @Injectable()
 export class IncidentsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly integrations: IntegrationsService,
+  ) {}
 
   private async newKey(): Promise<string> {
     for (let i = 0; i < 20; i++) {
@@ -46,9 +50,22 @@ export class IncidentsService {
     await this.event(inc.id, 'detected', `Incident detected on ${input.service}`, {
       errorRate: input.errorRate,
     });
-    // Outbound Slack alert (no-op unless SLACK_WEBHOOK_URL is set).
-    notifySlack(`:rotating_light: *RootVector incident ${inc.key}* — ${inc.title} (service: ${input.service}, source: ${input.source})`);
+    // Outbound Slack alert (no-op unless Slack is connected or SLACK_WEBHOOK_URL set).
+    this.integrations.slackUrl()
+      .then((url) => postSlack(url, `:rotating_light: *RootVector incident ${inc.key}* — ${inc.title} (service: ${input.service}, source: ${input.source})`))
+      .catch(() => undefined);
     return inc; // the AgentService runs the investigation (streamed) after creation
+  }
+
+  /** Human rejected the recommendation — record it (shows in History). */
+  async reject(key: string) {
+    const inc = await this.prisma.incident.findUnique({ where: { key } });
+    if (!inc) throw new NotFoundException('Incident not found');
+    await this.event(inc.id, 'rejected', 'Recommendation rejected by a human — no action taken');
+    return this.prisma.incident.update({
+      where: { key },
+      data: { status: 'rejected', resolvedAt: new Date() },
+    });
   }
 
   /** Auto-resolve open incidents for a service when a source reports recovery. */

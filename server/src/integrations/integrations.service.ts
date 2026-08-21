@@ -26,6 +26,29 @@ export class IntegrationsService {
     });
   }
 
+  /** Store a Slack Incoming Webhook URL (encrypted) so incidents post to Slack. */
+  async connectSlack(userId: string, url: string) {
+    if (!/^https:\/\/hooks\.slack\.com\/services\//.test(url || '')) {
+      throw new BadRequestException('Enter a valid Slack Incoming Webhook URL (https://hooks.slack.com/services/...).');
+    }
+    const accessTokenEnc = this.crypto.encrypt(url);
+    return this.prisma.integration.upsert({
+      where: { userId_provider: { userId, provider: 'slack' } },
+      update: { accessTokenEnc, status: 'connected' },
+      create: { userId, provider: 'slack', accessTokenEnc, status: 'connected' },
+    });
+  }
+
+  /** The active Slack webhook URL: env override, else the stored connection. */
+  async slackUrl(): Promise<string | null> {
+    if (process.env.SLACK_WEBHOOK_URL) return process.env.SLACK_WEBHOOK_URL;
+    const row = await this.prisma.integration.findFirst({
+      where: { provider: 'slack' }, orderBy: { createdAt: 'desc' },
+    });
+    if (!row) return null;
+    try { return this.crypto.decrypt(row.accessTokenEnc); } catch { return null; }
+  }
+
   async disconnect(userId: string, provider: string) {
     await this.prisma.integration
       .delete({ where: { userId_provider: { userId, provider } } })
@@ -42,7 +65,7 @@ export class IntegrationsService {
     // secret is configured; surface the last verified delivery.
     const sentryConfigured = !!process.env.SENTRY_CLIENT_SECRET;
     const alertConfigured = !!process.env.ALERT_WEBHOOK_SECRET;
-    const slackConfigured = !!process.env.SLACK_WEBHOOK_URL;
+    const slackConfigured = !!process.env.SLACK_WEBHOOK_URL || !!byProvider.slack;
 
     // last verified delivery per provider (for "last event" + status)
     const lastByProvider: Record<string, Date | null> = {};

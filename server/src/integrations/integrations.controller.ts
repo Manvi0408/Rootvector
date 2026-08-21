@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Body,
   Res,
   UseGuards,
   BadRequestException,
@@ -44,6 +45,19 @@ export class IntegrationsController {
   @Post('integrations/github/disconnect')
   githubDisconnect(@CurrentUser() u: AuthedUser) {
     return this.integrations.disconnect(u.userId, 'github');
+  }
+
+  /** Connect Slack by saving an Incoming Webhook URL (stored encrypted). */
+  @UseGuards(JwtAuthGuard)
+  @Post('integrations/slack/connect')
+  slackConnect(@CurrentUser() u: AuthedUser, @Body() b: { url: string }) {
+    return this.integrations.connectSlack(u.userId, (b?.url || '').trim());
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('integrations/slack/disconnect')
+  slackDisconnect(@CurrentUser() u: AuthedUser) {
+    return this.integrations.disconnect(u.userId, 'slack');
   }
 
   /** Real repositories from the connected GitHub account. */
