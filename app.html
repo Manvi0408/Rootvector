@@ -574,8 +574,10 @@ function ipEnsureStyle(){
   if(document.getElementById('ip-style')) return;
   const s=document.createElement('style'); s.id='ip-style';
   s.textContent=`
-  .ip-frame{font-family:'Plus Jakarta Sans',ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;background:linear-gradient(120deg,#F4B06A,#B884E0 52%,#EE8FC0);padding:2px;border-radius:24px;box-shadow:0 30px 80px -40px rgba(120,80,180,.5)}
-  .ip-inner{background:#fff;border-radius:22px;padding:22px 26px 26px}
+  .ip-frame{font-family:'Plus Jakarta Sans',ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;background:linear-gradient(120deg,#F6A24E 0%,#F0A074 18%,#C98BE6 58%,#EE86C6 100%);padding:3px;border-radius:24px;box-shadow:0 30px 80px -38px rgba(150,90,180,.55)}
+  .ip-inner{position:relative;background:linear-gradient(140deg,#FFF3E4 0%,#FEFAF5 26%,#FBF7FF 62%,#F5F0FE 100%);border-radius:21px;padding:22px 26px 26px}
+  .ip-inner::before{content:"";position:absolute;inset:0;border-radius:21px;pointer-events:none;background:radial-gradient(60% 45% at 8% 0%,rgba(246,162,78,.22),transparent 60%),radial-gradient(55% 50% at 100% 100%,rgba(176,124,224,.20),transparent 62%)}
+  .ip-inner>*{position:relative}
   .ip-head{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:20px}
   .ip-h1{font-size:23px;font-weight:800;letter-spacing:-.02em;color:#1A1630}
   .ip-sub{margin-top:5px;font-size:12.5px;color:#6E6A78;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
