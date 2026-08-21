@@ -243,13 +243,7 @@ button{font-family:inherit;cursor:pointer}
     </svg>
     <b>rootvector</b>
   </a>
-  <nav class="topnav" id="topnav">
-    <a href="#/overview">Overview</a>
-    <a href="#/investigations">Investigations</a>
-    <a href="#/services">Services</a>
-    <a href="#/repositories">Repositories</a>
-    <a href="#/integrations">Integrations</a>
-  </nav>
+  <div style="flex:1"></div>
   <div class="tb-right">
     <div class="search" onclick="openPalette()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><input placeholder="Search anything…" readonly><span class="kbd">⌘K</span></div>
     <button class="bell" id="bell" aria-label="Notifications" onclick="toggleNotif(event)"><span class="badge" id="bellBadge" hidden>0</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></button>
@@ -350,16 +344,17 @@ function pageOverview(){
   return `
   <div class="ov-head">
     <div>
-      <div class="ov-greet">Welcome back, <b>${rvFirstName()}</b> <span class="wave">👋</span></div>
-      <h1 class="ov-title">Production Overview</h1>
+      <div class="ov-greet" id="ovGreet">Welcome back, <b>${rvFirstName()}</b> <span class="wave">👋</span></div>
+      <h1 class="ov-title" id="ovTitle">Production Overview</h1>
       <div class="ov-status" id="ovStatus"><span class="dot"></span> All systems operational</div>
     </div>
-    <div style="display:flex;gap:10px">
+    <div style="display:flex;gap:10px" id="ovActions">
       <button class="btn-outline" onclick="clearDemo(this)" title="Remove demo incidents + seeded activity">Clear demo data</button>
       <button class="btn-approve" onclick="simulateIncident(this)" title="Runs the real incident pipeline (demo)">⚡ Simulate incident</button>
     </div>
   </div>
 
+  <div id="ovMain">
   <div class="ov-kpis">
     <div class="ov-kpi"><span class="ov-tile red">${svg(ICN.shield)}</span><span class="ov-kspark" id="sActive"></span><div class="v" id="kActive">—</div><div class="l">Active incidents</div><div class="ov-delta" id="dActive"></div></div>
     <div class="ov-kpi"><span class="ov-tile violet">${svg(ICN.cube)}</span><span class="ov-kspark" id="sServices"></span><div class="v" id="kServices">—</div><div class="l">Services monitored</div><div class="ov-delta" id="dServices"></div></div>
@@ -378,6 +373,22 @@ function pageOverview(){
     <div class="card"><div class="card-h"><h3>Recent Deployments</h3><a class="viewall" href="#/repositories">View all →</a></div><div id="ovDeploys"><div class="muted">Loading…</div></div></div>
     <div class="card"><div class="card-h"><h3>Recent Activity</h3><a class="viewall" href="#/investigations">View all →</a></div><div id="ovActivity"><div class="muted">Loading…</div></div></div>
     <div class="card"><div class="card-h"><h3>Top Affected Services</h3><a class="viewall" href="#/services">View all →</a></div><div id="ovServices"><div class="muted">Loading…</div></div></div>
+  </div>
+  </div>
+
+  <div id="ovOnboard" hidden>
+    <div class="onb-card">
+      <div class="onb-orb"></div>
+      <h3>Connect your stack to begin</h3>
+      <p>RootVector detects and investigates <b>real</b> incidents from your tools. Connect one to see live health, investigations and root-cause analysis here.</p>
+      <div class="onb-tools">
+        <a class="onb-tool" href="#/integrations">${B.github} GitHub</a>
+        <a class="onb-tool" href="#/integrations">${B.sentry} Sentry</a>
+        <a class="onb-tool" href="#/integrations">${svg(ICN.cube)} Datadog</a>
+        <a class="onb-tool" href="#/integrations">${svg(ICN.cube)} Grafana</a>
+      </div>
+      <a class="btn-approve" style="display:inline-block;margin-top:18px" href="#/integrations">Go to Integrations →</a>
+    </div>
   </div>`;
 }
 function ovEnsureStyle(){
@@ -413,7 +424,22 @@ function ovEnsureStyle(){
   .sev{font-size:10.5px;font-weight:800;padding:3px 7px;border-radius:6px;flex:0 0 auto}
   .sev.s1{background:#FDECEC;color:#DC2626}.sev.s2{background:#FEF3E2;color:#D97706}.sev.s3{background:#FDF6E3;color:#B8860B}
   .ov-pill{font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px;background:#F1F1F4;color:#6E6A78;display:inline-block}
-  .ov-spark{width:64px;height:20px;vertical-align:middle}`;
+  .ov-spark{width:64px;height:20px;vertical-align:middle}
+  /* onboarding (first-time, nothing connected) */
+  .type-caret::after{content:"";display:inline-block;width:2px;height:1em;background:var(--violet-ink);margin-left:2px;vertical-align:-2px;animation:caret .8s step-end infinite}
+  @keyframes caret{50%{opacity:0}}
+  .onb-card{max-width:620px;margin:20px auto 0;background:#fff;border:1px solid #EEEFF3;border-radius:24px;box-shadow:0 1px 2px rgba(17,20,28,.04),0 30px 60px -30px rgba(17,20,28,.28);padding:38px 34px;text-align:center}
+  .onb-orb{width:78px;height:78px;border-radius:50%;margin:0 auto 20px;background:radial-gradient(circle at 34% 30%,#fff 0%,#ffd9e6 32%,#cfe0ff 62%,#dcc9ff 100%);box-shadow:0 0 0 10px rgba(180,200,255,.10),0 14px 34px -8px rgba(150,160,255,.55);animation:orbF 3s ease-in-out infinite}
+  .onb-card h3{font-size:22px;font-weight:800;color:#1A1630;margin:0 0 8px}
+  .onb-card p{color:var(--muted);font-size:14px;max-width:44ch;margin:0 auto 20px;line-height:1.55}
+  .onb-tools{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+  .onb-tool{display:inline-flex;align-items:center;gap:8px;border:1px solid #E9E9F0;border-radius:12px;padding:9px 14px;font-size:13px;font-weight:600;color:#3A3552;background:#fff}
+  .onb-tool:hover{border-color:var(--violet);color:var(--violet-ink)}
+  .onb-tool svg{width:16px;height:16px}
+  /* one-time attention pulse on the Investigations sidebar item */
+  .nav-pulse{animation:navPulse 1s ease-in-out 3;border-radius:11px}
+  @keyframes navPulse{0%,100%{box-shadow:0 0 0 0 rgba(109,90,230,0)}50%{box-shadow:0 0 0 4px rgba(109,90,230,.28);background:var(--violet-soft)}}
+  .side a.nav.hintline{text-decoration:underline;text-decoration-color:var(--violet);text-underline-offset:3px;color:var(--violet-ink);font-weight:700}`;
   document.head.appendChild(s);
 }
 
@@ -423,10 +449,44 @@ function actIcon(kind){
   if(kind==='error') return `<span class="ic" style="color:#DC2626">${svg(ICN.xcircle)}</span>`;
   return `<span class="ic">${svg(ICN.info)}</span>`;
 }
+/* typewriter: types `text` into el then calls done() */
+let ovTypeTimer=null;
+function ovTypewriter(el, text, done){
+  if(!el) return;
+  if(ovTypeTimer){ clearInterval(ovTypeTimer); ovTypeTimer=null; }
+  el.classList.add('type-caret'); el.textContent='';
+  let i=0;
+  ovTypeTimer=setInterval(()=>{
+    el.textContent=text.slice(0,++i);
+    if(i>=text.length){ clearInterval(ovTypeTimer); ovTypeTimer=null; setTimeout(()=>{ el.classList.remove('type-caret'); if(done) done(); }, 450); }
+  }, 36);
+}
+/* one-time attention pulse + underline on the Investigations sidebar item */
+function ovHintInvestigations(){
+  const nav=document.querySelector('.side a.nav[data-k="investigations"]');
+  if(!nav) return;
+  nav.classList.add('nav-pulse','hintline');
+  setTimeout(()=>nav.classList.remove('nav-pulse'), 3200); // pulse ~3×, keep the underline hint
+}
 async function loadOverview(){
   let d, all;
   try{ [d, all] = await Promise.all([ (await rvApi('/overview')).json(), (await rvApi('/incidents')).json() ]); }catch(e){ return; }
   all = all || [];
+  // First-time state: the user hasn't connected GitHub and there's no real
+  // (non-demo) incident yet → show onboarding. Demo incidents don't count.
+  const connected = d.githubConnected || all.some(i=>!i.isDemo);
+  const main=$('ovMain'), onboard=$('ovOnboard'), greet=$('ovGreet'), title=$('ovTitle'), status=$('ovStatus'), acts=$('ovActions');
+  if(!connected){
+    if(main) main.hidden=true; if(onboard) onboard.hidden=false; if(acts) acts.style.display='none';
+    if(greet) greet.style.display='none';
+    if(title) title.textContent="Hello, let’s get started 👋";
+    if(status){ status.style.color='var(--muted)'; status.innerHTML='<span></span>'; }
+    ovTypewriter(status, 'Connect any of your stack from the Integrations to begin →', ()=>{ ovHintInvestigations(); });
+    return;   // skip filling KPIs/charts while empty
+  }
+  if(main) main.hidden=false; if(onboard) onboard.hidden=true; if(acts) acts.style.display='';
+  if(greet) greet.style.display='';
+  if(title) title.textContent='Production Overview';
   const S=d.stats||{}; const set=(id,v)=>{const el=document.getElementById(id); if(el) el.textContent=v;};
   const active=all.filter(i=>i.status!=='resolved'&&i.status!=='rejected');
   const resolved=all.filter(i=>i.status==='resolved').length;
@@ -890,6 +950,7 @@ function route(){
   const k = parts[0] || 'overview';
   const navKey = (k==='investigations') ? 'investigations' : (PAGES[k] ? k : 'overview');
   if(k==='investigations' && typeof rvClearUnread==='function') rvClearUnread(); // viewed → clear the "new" number
+  if(k==='investigations'){ const iv=document.querySelector('.side a.nav[data-k="investigations"]'); if(iv) iv.classList.remove('hintline','nav-pulse'); }
   document.querySelectorAll('.topnav a').forEach(a=>a.classList.toggle('on', a.getAttribute('href')==='#/'+navKey));
   document.querySelectorAll('.side a.nav').forEach(a=>a.classList.toggle('on', a.dataset.k===navKey));
   if(k==='investigations' && parts[1]){ $('main').innerHTML = pageInvestigation(parts[1]); window.scrollTo(0,0); return; }
