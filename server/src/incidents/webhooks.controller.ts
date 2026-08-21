@@ -1,4 +1,4 @@
-import { Controller, Post, Req, Headers, HttpCode } from '@nestjs/common';
+import { Controller, Post, Req, Headers, HttpCode, Query } from '@nestjs/common';
 import type { RawBodyRequest } from '@nestjs/common';
 import type { Request } from 'express';
 import * as crypto from 'crypto';
@@ -81,6 +81,84 @@ export class WebhooksController {
       );
     }
     return { ok: true };
+  }
+
+  // ── Generic alert receivers (Datadog · Grafana · Kubernetes · OpenTelemetry) ──
+  // Point any of these tools' alerting at the matching URL below with a shared
+  // token (header `x-rootvector-token` or `?token=`) equal to ALERT_WEBHOOK_SECRET.
+  // A firing alert opens a real incident; a resolved/recovered one closes it.
+
+  private alertAuthed(req: Request, token?: string): boolean {
+    const secret = process.env.ALERT_WEBHOOK_SECRET;
+    if (!secret) return false;
+    const provided = (req.headers['x-rootvector-token'] as string) || token;
+    return provided === secret;
+  }
+
+  /** Prometheus/Alertmanager-style payload (Grafana + Kubernetes Alertmanager). */
+  private normalizeAlertmanager(body: any): { title: string; service: string; severity: number; state: string }[] {
+    const arr = Array.isArray(body?.alerts) ? body.alerts : [];
+    if (!arr.length && body?.title) return [{ title: body.title, service: 'production', severity: 2, state: body.status || 'firing' }];
+    return arr.map((a: any) => {
+      const l = a.labels || {}, an = a.annotations || {};
+      return {
+        title: an.summary || an.description || l.alertname || body.title || 'Alert',
+        service: l.service || l.job || l.namespace || l.deployment || l.pod || 'production',
+        severity: /crit|p1|sev1|page/i.test(l.severity || '') ? 1 : 2,
+        state: String(a.status || body.status || 'firing'),
+      };
+    });
+  }
+
+  /** Free-form payload (Datadog templated webhook, OpenTelemetry, generic). */
+  private normalizeGeneric(body: any): { title: string; service: string; severity: number; state: string }[] {
+    return [{
+      title: body.title || body.alert || body.message || body.event_title || body.alert_title || 'Alert',
+      service: body.service || body.host || body.hostname || body.resource || body.scope || 'production',
+      severity: /crit|p1|sev1/i.test(String(body.severity || body.priority || body.alert_type || '')) ? 1 : 2,
+      state: String(body.state || body.status || body.alert_transition || body.alert_type || 'firing'),
+    }];
+  }
+
+  private async ingestAlerts(provider: string, req: RawBodyRequest<Request>, token: string | undefined, items: { title: string; service: string; severity: number; state: string }[]) {
+    const verified = this.alertAuthed(req, token);
+    await this.prisma.webhookDelivery.create({ data: { provider, event: 'alert', verified } });
+    if (!verified) return { ok: false, reason: 'unauthorized (bad or missing token)' };
+
+    const opened: string[] = [], resolved: string[] = [];
+    for (const it of items) {
+      const isResolved = /resolv|recover|\bok\b|clos|heal|success/i.test(it.state);
+      const isFiring = !isResolved && /fir|trig|alert|crit|open|warn|bad|error|fail|page/i.test(it.state);
+      if (isFiring || (!isResolved && items.length)) {
+        await this.incidents.addActivity({ kind: 'error', title: it.title, service: it.service });
+        const existing = await this.incidents.hasActive(it.service);
+        if (existing) { opened.push(existing.key); continue; }
+        const inc = await this.incidents.create({ title: it.title, service: it.service, severity: it.severity, source: provider });
+        this.agent.run(inc.id).catch(() => undefined);
+        opened.push(inc.key);
+      } else if (isResolved) {
+        const r = await this.incidents.resolveByService(it.service);
+        if (r.resolved) resolved.push(it.service);
+      }
+    }
+    return { ok: true, opened, resolved };
+  }
+
+  @Post('grafana') @HttpCode(200)
+  grafana(@Req() req: RawBodyRequest<Request>, @Query('token') token: string) {
+    return this.ingestAlerts('grafana', req, token, this.normalizeAlertmanager(req.body || {}));
+  }
+  @Post('kubernetes') @HttpCode(200)
+  kubernetes(@Req() req: RawBodyRequest<Request>, @Query('token') token: string) {
+    return this.ingestAlerts('kubernetes', req, token, this.normalizeAlertmanager(req.body || {}));
+  }
+  @Post('datadog') @HttpCode(200)
+  datadog(@Req() req: RawBodyRequest<Request>, @Query('token') token: string) {
+    return this.ingestAlerts('datadog', req, token, this.normalizeGeneric(req.body || {}));
+  }
+  @Post('opentelemetry') @HttpCode(200)
+  opentelemetry(@Req() req: RawBodyRequest<Request>, @Query('token') token: string) {
+    return this.ingestAlerts('opentelemetry', req, token, this.normalizeGeneric(req.body || {}));
   }
 
   /** Turn a GitHub problem into a real incident (+ live AI investigation). */

@@ -462,18 +462,27 @@ async function loadIntegrations(){
   const el=document.getElementById('intList'); if(!el) return;
   try{
     const list=await (await rvApi('/integrations')).json();
+    const base = RV_API.startsWith('http') ? RV_API.replace(/\/api$/,'') : location.origin;
     el.innerHTML=list.map(p=>{
       const connected=p.status==='connected';
       const brand=p.key==='github'?B.github:p.key==='sentry'?B.sentry:svg(ICN.cube);
       let foot;
-      if(p.key==='sentry'){
+      if(p.key==='github'){
+        foot = connected
+          ? `<span class="int-sub">${p.externalLogin?('@'+p.externalLogin):'Connected'}</span><button class="btn-outline" onclick="disconnectGithub()">Disconnect</button>`
+          : `<button class="btn-primary" onclick="connectProvider('github')">Connect GitHub</button>`;
+      } else if(p.key==='sentry'){
         foot = connected
           ? `<span class="int-sub">Webhook configured${p.lastEventAt?' · last event '+timeAgo(p.lastEventAt):' · waiting for events'}</span>`
           : `<button class="btn-primary" onclick="sentrySetup()">Set up Sentry</button>`;
-      } else if(connected){
-        foot = `<span class="int-sub">${p.externalLogin?('@'+p.externalLogin):'Connected'}</span><button class="btn-outline" onclick="disconnectGithub()">Disconnect</button>`;
-      } else if(p.available){
-        foot = `<button class="btn-primary" onclick="connectProvider('${p.key}')">Connect ${p.name}</button>`;
+      } else if(p.style==='webhook'){
+        const url = base + p.webhookPath;
+        foot = `<span class="int-sub">${connected?('Webhook ready'+(p.lastEventAt?' · last alert '+timeAgo(p.lastEventAt):' · waiting for alerts')):'Needs ALERT_WEBHOOK_SECRET'}</span>
+          <button class="${connected?'btn-outline':'btn-primary'}" onclick="webhookSetup('${p.key}','${p.name}','${url}')">${connected?'Webhook URL':'Set up webhook'}</button>`;
+      } else if(p.style==='outbound'){
+        foot = connected
+          ? `<span class="int-sub">Notifications on · posts new incidents to Slack</span>`
+          : `<button class="btn-primary" onclick="slackSetup()">Set up Slack</button>`;
       } else {
         foot = `<span class="int-soon">Coming soon</span>`;
       }
@@ -486,6 +495,34 @@ async function loadIntegrations(){
 }
 function connectProvider(key){ if(key==='github') location.href=RV_API+'/integrations/github/connect'; }
 async function disconnectGithub(){ try{ await rvApi('/integrations/github/disconnect',{method:'POST'}); }catch(e){} loadIntegrations(); }
+function webhookSetup(key,name,url){
+  const hints={
+    datadog:'Datadog → Integrations → Webhooks: add a webhook with this URL and a JSON body such as {"title":"$EVENT_TITLE","service":"$HOSTNAME","severity":"$ALERT_PRIORITY","state":"$ALERT_TRANSITION"}.',
+    grafana:'Grafana → Alerting → Contact points: add a Webhook contact point with this URL. Grafana sends its standard alert JSON.',
+    kubernetes:'Point Alertmanager (Prometheus) at this URL as a webhook receiver — standard Alertmanager JSON is supported.',
+    opentelemetry:'From your OpenTelemetry Collector / alert backend, POST alerts to this URL as {title, service, severity, state}.'
+  };
+  const ov=document.createElement('div'); ov.className='modal-ov'; ov.id='whModal';
+  ov.innerHTML=`<div class="modal" style="max-width:580px">
+    <h3>Connect ${name}</h3>
+    <p class="muted" style="padding:0">Send ${name} alerts here. A <b>firing</b> alert opens a real incident; a <b>resolved</b> one closes it.</p>
+    <div style="font-size:12.5px;font-weight:700;margin:14px 0 5px">Webhook URL</div>
+    <div style="display:flex;gap:8px"><input readonly value="${url}" onclick="this.select()" style="flex:1;border:1px solid var(--line);border-radius:9px;padding:9px 11px;font:inherit;font-size:12.5px"><button class="btn-outline" onclick="navigator.clipboard&&navigator.clipboard.writeText('${url}');toast('URL copied')">Copy</button></div>
+    <div style="font-size:12.5px;margin-top:14px"><b>Auth:</b> add header <code>x-rootvector-token</code> (or <code>?token=</code>) equal to your <code>ALERT_WEBHOOK_SECRET</code>.</div>
+    <p class="muted" style="margin-top:12px;font-size:12.5px;line-height:1.55">${hints[key]||''}</p>
+    <div class="modal-act"><button class="btn-approve" onclick="document.getElementById('whModal').remove()">Done</button></div></div>`;
+  ov.addEventListener('click',e=>{ if(e.target===ov) ov.remove(); });
+  document.body.appendChild(ov);
+}
+function slackSetup(){
+  const ov=document.createElement('div'); ov.className='modal-ov'; ov.id='slackModal';
+  ov.innerHTML=`<div class="modal" style="max-width:520px"><h3>Connect Slack</h3>
+    <p class="muted" style="padding:0">RootVector posts every new incident to a Slack channel via an Incoming Webhook.</p>
+    <ol class="muted" style="margin:10px 0 0;padding-left:18px;line-height:1.75;font-size:13px"><li>In Slack, create an <b>Incoming Webhook</b> for your channel.</li><li>Set <code>SLACK_WEBHOOK_URL</code> to that URL in the backend env.</li><li>Restart / redeploy — new incidents will post to Slack.</li></ol>
+    <div class="modal-act"><button class="btn-approve" onclick="document.getElementById('slackModal').remove()">Done</button></div></div>`;
+  ov.addEventListener('click',e=>{ if(e.target===ov) ov.remove(); });
+  document.body.appendChild(ov);
+}
 function sentrySetup(){
   const ov=document.createElement('div'); ov.className='modal-ov'; ov.id='sentryModal';
   ov.innerHTML=`<div class="modal" style="width:520px">

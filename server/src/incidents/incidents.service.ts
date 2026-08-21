@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { notifySlack } from '../common/notify';
 
 @Injectable()
 export class IncidentsService {
@@ -45,7 +46,25 @@ export class IncidentsService {
     await this.event(inc.id, 'detected', `Incident detected on ${input.service}`, {
       errorRate: input.errorRate,
     });
+    // Outbound Slack alert (no-op unless SLACK_WEBHOOK_URL is set).
+    notifySlack(`:rotating_light: *RootVector incident ${inc.key}* — ${inc.title} (service: ${input.service}, source: ${input.source})`);
     return inc; // the AgentService runs the investigation (streamed) after creation
+  }
+
+  /** Auto-resolve open incidents for a service when a source reports recovery. */
+  async resolveByService(service: string) {
+    const open = await this.prisma.incident.findMany({
+      where: { service, status: { not: 'resolved' } },
+    });
+    for (const inc of open) {
+      await this.event(inc.id, 'verification', 'Source reported recovery; metrics back to baseline');
+      await this.event(inc.id, 'resolved', 'Recovery verified — incident resolved');
+      await this.prisma.incident.update({
+        where: { id: inc.id },
+        data: { status: 'resolved', resolvedAt: new Date() },
+      });
+    }
+    return { resolved: open.length };
   }
 
   async addActivity(a: { kind: string; title: string; service?: string; url?: string; meta?: any }) {
