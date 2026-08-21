@@ -395,7 +395,21 @@ async function loadOverview(){
     if(!d.activeIncidents.length){
       iv.innerHTML=`<div class="empty"><div class="orb">${svg(ICN.search)}</div><h4>No active investigations</h4><p>You're all caught up. When RootVector investigates incidents, they'll appear here.</p><a class="btn-outline" href="#/investigations">View investigations</a></div>`;
     }else{
-      iv.innerHTML=d.activeIncidents.map(i=>`<div class="act" style="cursor:pointer" onclick="location.hash='#/investigations/${i.key}'"><span class="ic" style="color:#DC2626">${svg(ICN.xcircle)}</span><div class="m"><div class="tt">${i.title} ${i.isDemo?'<span class="tag">DEMO</span>':''}</div><div class="sub">${i.key} · SEV${i.severity} · ${i.service} · <span style="color:var(--violet-ink);font-weight:600">View investigation →</span></div></div><div class="time">${i.confidence?i.confidence+'%':'investigating'}</div></div>`).join('');
+      iv.innerHTML=d.activeIncidents.map(i=>{
+        const pending = i.confidence && i.status!=='resolved';
+        const pill = i.status==='resolved'
+          ? '<span class="badge-h"><span class="dot"></span>Resolved</span>'
+          : (pending
+              ? '<span class="badge-h" style="color:#B45309"><span class="dot" style="background:#D97706;box-shadow:0 0 0 3px rgba(217,119,6,.15)"></span>Awaiting your approval</span>'
+              : '<span class="badge-h" style="color:var(--violet-ink)"><span class="dot violet"></span>Investigating</span>');
+        return `<div class="act"><span class="ic" style="color:#DC2626">${svg(ICN.xcircle)}</span>
+          <div class="m"><div class="tt">${i.title} ${i.isDemo?'<span class="tag">DEMO</span>':''}</div>
+            <div class="sub">${i.key} · SEV${i.severity} · ${i.service} &nbsp; ${pill}</div></div>
+          <div style="display:flex;align-items:center;gap:12px;flex:0 0 auto">
+            ${i.confidence?`<span class="time">${i.confidence}%</span>`:''}
+            <button class="btn-outline" style="padding:7px 13px;font-size:13px;white-space:nowrap" onclick="location.hash='#/investigations/${i.key}'">Check detailed investigation →</button>
+          </div></div>`;
+      }).join('');
     }
   }
 
@@ -619,8 +633,11 @@ function applyInvEvent(e){
     $('invRecCard').hidden=false;
     $('invRec').innerHTML=`<div class="rec-box"><div class="a">${e.message}</div>${d.rationale?`<div class="m">${d.rationale}</div>`:''}
       <div class="rec-tags"><span>Risk: ${d.risk||'Low'}</span><span>Reversible</span></div></div>`;
-    $('invActions').innerHTML=`<button class="btn-reject" onclick="toast('Recommendation rejected')">Reject</button>
+    const act=$('invActions'); act.style.flexWrap='wrap';
+    act.innerHTML=`<div style="flex-basis:100%;font-size:12.5px;color:#B45309;background:#FEF3E2;border:1px solid #FCE3BF;border-radius:9px;padding:9px 11px;margin-bottom:10px">⏸ <b>Human approval required.</b> RootVector will <b>not</b> execute anything until you approve below.</div>
+      <button class="btn-reject" onclick="toast('Recommendation rejected')">Reject</button>
       <button class="btn-approve" id="invApprove" onclick="confirmApprove()">✓ Approve &amp; Execute</button>`;
+    const st=$('invStatus'); if(st && !st.classList.contains('done')){ st.innerHTML='<span class="dot" style="background:#D97706;box-shadow:0 0 0 3px rgba(217,119,6,.15)"></span> Awaiting your approval'; }
   }
   else if(e.kind==='approval.required') invTlRow('run','⏸', e.at, e.message);
   else if(e.kind==='remediation') invTlRow('ok','✓', e.at, e.message);
