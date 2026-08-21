@@ -468,6 +468,12 @@ function ovHintInvestigations(){
   nav.classList.add('nav-pulse','hintline');
   setTimeout(()=>nav.classList.remove('nav-pulse'), 3200); // pulse ~3×, keep the underline hint
 }
+/* Is the user connected? (their own GitHub). Gates the incident pages. */
+async function rvConnected(){ try{ const o=await (await rvApi('/overview')).json(); return !!o.githubConnected; }catch(e){ return false; } }
+function connectGate(kind){
+  const msg={investigations:'Connect a tool and RootVector will investigate your real incidents here.',services:"Connect a tool to start tracking your services' health here.",history:'Your solved and cancelled incidents will appear here once you connect a tool.'};
+  return `<div class="health"><div class="empty" style="padding:44px 6px"><div class="orb">${svg(ICN.cube)}</div><h4>Connect your stack first</h4><p>${msg[kind]||'Connect a tool from Integrations to begin.'}</p><a class="btn-approve" href="#/integrations" style="display:inline-block">Go to Integrations →</a></div></div>`;
+}
 async function loadOverview(){
   let d, all;
   try{ [d, all] = await Promise.all([ (await rvApi('/overview')).json(), (await rvApi('/incidents')).json() ]); }catch(e){ return; }
@@ -782,6 +788,7 @@ function pageServices(){
 }
 async function loadServices(){
   const el=document.getElementById('svcList'); if(!el) return;
+  if(!(await rvConnected())){ el.innerHTML=connectGate('services'); return; }
   let list; try{ list=await (await rvApi('/incidents')).json(); }catch(e){ el.innerHTML='<div class="muted">Could not load.</div>'; return; }
   const by={};
   (list||[]).forEach(i=>{ const s=i.service||'unknown'; const o=(by[s]=by[s]||{name:s,total:0,open:0,last:null,src:i.source}); o.total++; if(i.status!=='resolved'&&i.status!=='rejected') o.open++; if(!o.last||new Date(i.startedAt)>new Date(o.last)) o.last=i.startedAt; });
@@ -805,6 +812,7 @@ function pageHistory(){
 }
 async function loadHistory(){
   const el=document.getElementById('histList'); if(!el) return;
+  if(!(await rvConnected())){ el.innerHTML=connectGate('history'); return; }
   let list; try{ list=await (await rvApi('/incidents')).json(); }catch(e){ el.innerHTML='<div class="muted">Could not load.</div>'; return; }
   const done=(list||[]).filter(i=>i.status==='resolved'||i.status==='rejected').sort((a,b)=>new Date(b.resolvedAt||b.startedAt)-new Date(a.resolvedAt||a.startedAt));
   if(!done.length){ el.innerHTML=`<div class="health"><div class="empty" style="padding:40px 6px"><div class="orb">${svg(ICN.check)}</div><h4>No history yet</h4><p>Once you approve a fix (solved) or cancel a recommendation, it's recorded here.</p><a class="btn-outline" href="#/investigations">Go to investigations</a></div></div>`; return; }
@@ -1266,12 +1274,14 @@ function pageInvestigationsList(){
   return `<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap">
     <div><h1 class="h1">Investigations</h1>
       <div class="statusline"><span class="dot"></span> <span id="invListStatus">Loading…</span></div></div>
-    <button class="btn-approve" style="white-space:nowrap;padding:12px 18px;font-size:14.5px" onclick="runGuidedInvestigation()">▶ Investigate now</button>
+    <button class="btn-approve" id="invNowBtn" style="white-space:nowrap;padding:12px 18px;font-size:14.5px" onclick="runGuidedInvestigation()">▶ Investigate now</button>
   </div>
   <div id="invList"><div class="muted">Loading…</div></div>`;
 }
 async function loadInvestigationsList(){
   const el=$('invList'); if(!el) return;
+  if(!(await rvConnected())){ el.innerHTML=connectGate('investigations'); const st=$('invListStatus'); if(st) st.textContent='Connect a tool to begin'; const b=$('invNowBtn'); if(b) b.style.display='none'; return; }
+  const b=$('invNowBtn'); if(b) b.style.display='';
   let list; try{ list=await (await rvApi('/incidents')).json(); }catch(e){ el.innerHTML='<div class="muted">Could not load.</div>'; return; }
   const st=$('invListStatus'); if(st) st.textContent = list.length ? (list.length+' incident'+(list.length>1?'s':'')) : 'No investigations yet';
   if(!list.length){ el.innerHTML=`<div class="health"><div class="empty" style="padding:40px 6px"><div class="orb">${svg(ICN.search)}</div><h4>No investigations yet</h4><p>When RootVector detects an incident it investigates automatically. Try “⚡ Simulate incident” on the Overview.</p><a class="btn-outline" href="#/overview">Back to overview</a></div></div>`; return; }
