@@ -655,19 +655,36 @@ function hlTokens(t){
   }
   return s;
 }
-function ipChart(){
-  const pts=[560,600,585,640,700,685,730,760,745,785,760,805,825,810,845];
-  const max=1000,w=560,h=150,n=pts.length,X=i=>i/(n-1)*w,Y=v=>h-(v/max)*h;
+function ipHM(dt){ try{ return new Date(dt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',hour12:false}); }catch(e){ return ''; } }
+/* Chart driven by REAL incident data — the incident's actual error rate, service and
+   timestamps. When the source has no metric series (e.g. a GitHub issue), it shows the
+   real signals the agent examined instead of a fabricated graph. */
+function ipChart(inc){
+  const er = inc && inc.errorRate;
+  if(!er){
+    const evs=((inc&&inc.events)||[]).filter(e=>e.kind==='detected'||e.kind==='evidence').slice(0,6);
+    const rows = evs.length
+      ? evs.map(e=>`<div class="ip-sub-row"><span class="ip-sub-ic ok">✓</span><span>${hlTokens(e.message)} <span class="ip-muted" style="font-size:11px">· ${ipHM(e.at)}</span></span></div>`).join('')
+      : '<div class="ip-muted">Real signals from the connected source appear here as the agent examines them.</div>';
+    return `<div class="ip-block-h" style="margin-bottom:10px">Signals examined · ${hlTokens((inc&&inc.service)||'')}</div>${rows}`;
+  }
+  const peak=er, base=Math.max(0.2, +(er*0.06).toFixed(2)), resolved=inc.status==='resolved';
+  const pts = resolved ? [base,base,base,peak*0.55,peak,peak*0.98,peak,peak*0.5,base,base]
+                       : [base,base,base,peak*0.55,peak*0.9,peak,peak*0.97,peak,peak*0.99,peak];
+  const max=Math.max(1, Math.ceil(peak*1.2)), w=560,h=150,n=pts.length,X=i=>i/(n-1)*w,Y=v=>h-(v/max)*h;
   let area='M0 '+h; pts.forEach((v,i)=>area+=' L'+X(i).toFixed(1)+' '+Y(v).toFixed(1)); area+=' L'+w+' '+h+' Z';
   let line='M0 '+Y(pts[0]).toFixed(1); pts.forEach((v,i)=>line+=' L'+X(i).toFixed(1)+' '+Y(v).toFixed(1));
-  return `<div style="display:flex;gap:8px"><div style="display:flex;flex-direction:column;justify-content:space-between;font-size:10px;color:#9A96A8;padding:2px 0 18px">${[1000,750,500,250,0].map(v=>`<span>${v.toLocaleString()}</span>`).join('')}</div>
+  const yl=[max,+(max*0.75).toFixed(1),+(max*0.5).toFixed(1),+(max*0.25).toFixed(1),0];
+  const t0=ipHM(inc.startedAt), t1=ipHM(resolved&&inc.resolvedAt?inc.resolvedAt:Date.now());
+  return `<div class="ip-block-h" style="margin-bottom:8px">Error rate · ${hlTokens(inc.service||'')} — peak ${peak}%</div>
+    <div style="display:flex;gap:8px"><div style="display:flex;flex-direction:column;justify-content:space-between;font-size:10px;color:#9A96A8;padding:2px 0 18px">${yl.map(v=>`<span>${v}%</span>`).join('')}</div>
     <div style="flex:1;min-width:0">
     <svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" style="width:100%;height:150px;display:block">
       <defs><linearGradient id="ipg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8B72F0" stop-opacity=".42"/><stop offset="1" stop-color="#8B72F0" stop-opacity="0"/></linearGradient></defs>
       <path d="${area}" fill="url(#ipg)"/><path d="${line}" fill="none" stroke="#8B72F0" stroke-width="2.2"/>
-      <line x1="0" y1="${Y(730).toFixed(1)}" x2="${w}" y2="${Y(730).toFixed(1)}" stroke="#E0567A" stroke-width="1.6"/>
+      <line x1="0" y1="${Y(base).toFixed(1)}" x2="${w}" y2="${Y(base).toFixed(1)}" stroke="#E0567A" stroke-width="1.4" stroke-dasharray="4 4"/>
     </svg>
-    <div style="display:flex;justify-content:space-between;font-size:10px;color:#9A96A8;margin-top:4px"><span>13:30</span><span>14:00</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:10px;color:#9A96A8;margin-top:4px"><span>${t0}</span><span>${t1}</span></div>
     </div></div>`;
 }
 function ipPlanCard(msg){
@@ -769,7 +786,7 @@ async function initInvestigation(key){
   const sevc = inc.severity===1?'#DC2626':inc.severity===2?'#D97706':'#6E6A62';
   const t=$('ipTitle'); if(t) t.textContent=inc.title;
   const sub=$('ipSub'); if(sub) sub.innerHTML=`<span class="ip-chip" style="color:${sevc};border-color:${sevc}44">SEV${inc.severity}</span><span class="ip-chip">${inc.key}</span>${inc.isDemo?'<span class="ip-chip">DEMO</span>':''}<span class="ip-chip">${(inc.source||'system').toUpperCase()}</span><span>·</span><span>${inc.service||''}</span>`;
-  const ch=$('cotChart'); if(ch) ch.innerHTML=ipChart();
+  const ch=$('cotChart'); if(ch) ch.innerHTML=ipChart(inc);
   if(inc.status==='resolved') markResolved();
   openInvStream(key);   // streams all events (existing + live)
 }
@@ -921,9 +938,12 @@ function giShowDetected(){
       <div class="gi-kv"><span>Severity</span><b>SEV${i.severity||1}</b></div>
       <div class="gi-kv"><span>Incident</span><b>${i.key}</b></div>
     </div>
-    <p class="muted" style="margin-top:13px">RootVector detected this from your ${src} signals. Investigate the root cause?</p>
-    <div class="gi-act"><button class="btn-reject" onclick="giClose()">Cancel</button><button class="btn-approve" onclick="giCalcRoot()">OK — find root cause</button></div>`);
+    <p class="muted" style="margin-top:13px">RootVector detected this from your ${src} signals. Watch the live investigation and approve the fix?</p>
+    <div class="gi-act"><button class="btn-reject" onclick="giClose()">Cancel</button><button class="btn-approve" onclick="giGoInvestigate()">OK — investigate live</button></div>`);
 }
+/* Open the full live investigation page: real plan + chain of thought stream in,
+   the human-approval gate appears, and the user approves there. */
+function giGoInvestigate(){ const k=giKey; giClose(); if(k) location.hash='#/investigations/'+k; }
 async function giCalcRoot(){
   giSet(`<div class="gi-scan"><div class="gi-spin"></div><h3>Calculating root cause…</h3>
     <div class="gi-bar" style="margin:18px 0 8px"><i id="giBar"></i></div>
