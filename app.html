@@ -320,50 +320,68 @@ function sparkline(pts,color){
 
 /* ---------- pages ---------- */
 function pageOverview(){
+  ovEnsureStyle();
   setTimeout(loadOverview,0);
   return `
-  <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap">
-    <div>
-      <h1 class="h1">Production Overview</h1>
-      <div class="statusline"><span class="dot" id="ovDot"></span> <span id="ovStatus">Loading…</span></div>
+  <div class="ov-head">
+    <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+      <h1 class="h1" style="margin:0">Production</h1>
+      <span class="ov-status" id="ovStatus"><span class="dot"></span> All systems operational</span>
     </div>
     <div style="display:flex;gap:10px">
       <button class="btn-outline" onclick="clearDemo(this)" title="Remove demo incidents + seeded activity">Clear demo data</button>
-      <button class="btn-outline" onclick="simulateIncident(this)" title="Runs the real incident pipeline (demo)">⚡ Simulate incident</button>
+      <button class="btn-approve" onclick="simulateIncident(this)" title="Runs the real incident pipeline (demo)">⚡ Simulate incident</button>
     </div>
   </div>
 
-  <div class="kpis">
-    <div class="kpi"><span class="tile">${svg(ICN.cube)}</span><div><div class="v" id="kServices">—</div><div class="l">Services monitored</div></div></div>
-    <div class="kpi"><span class="tile">${svg(ICN.shield)}</span><div><div class="v" id="kActive">—</div><div class="l">Active incidents</div></div></div>
-    <div class="kpi"><span class="tile">${svg(ICN.rocket)}</span><div><div class="v" id="kDeploys">—</div><div class="l">Recent deployments</div></div></div>
-    <div class="kpi"><span class="tile">${svg(ICN.bell)}</span><div><div class="v" id="kAlerts">—</div><div class="l">Alerts analyzed</div></div></div>
+  <div class="ov-kpis">
+    <div class="ov-kpi"><span class="ov-tile red">${svg(ICN.shield)}</span><div><div class="v" id="kActive">—</div><div class="l">Active incidents</div></div></div>
+    <div class="ov-kpi"><span class="ov-tile violet">${svg(ICN.cube)}</span><div><div class="v" id="kServices">—</div><div class="l">Services monitored</div></div></div>
+    <div class="ov-kpi"><span class="ov-tile amber">${svg(ICN.bell)}</span><div><div class="v" id="kAlerts">—</div><div class="l">Alerts analyzed</div></div></div>
+    <div class="ov-kpi"><span class="ov-tile green">${svg(ICN.check)}</span><div><div class="v" id="kResolved">—</div><div class="l">Resolved</div></div></div>
+    <div class="ov-kpi"><span class="ov-tile blue">${svg(ICN.rocket)}</span><div><div class="v" id="kDeploys">—</div><div class="l">Deployments</div></div></div>
   </div>
 
-  <div class="row3">
-    <div class="card">
-      <div class="card-h"><h3>RootVector Agent</h3><span class="info">${svg(ICN.info)}</span></div>
-      <div class="agent-status"><span class="dot violet"></span> Monitoring your connected systems</div>
-      <div class="brands"><span class="b">${B.github}</span><span class="b">${B.sentry}</span><span class="b">${B.deploy}</span></div>
-      <div class="brands-cap">GitHub · Sentry · Deployments</div>
-      <div class="agent-foot">${svg(ICN.clock)} <span id="agentLast">Waiting for connected systems…</span></div>
-    </div>
-
-    <div class="card">
-      <div class="card-h"><h3>Recent Activity</h3><a class="viewall" href="#/investigations">View all →</a></div>
-      <div id="ovActivity"><div class="muted" style="padding:8px 2px">Loading…</div></div>
-    </div>
-
-    <div class="card">
-      <div class="card-h"><h3>Recent Investigations</h3><span class="info">${svg(ICN.info)}</span></div>
-      <div id="ovInvest"></div>
-    </div>
+  <div class="ov-row1">
+    <div class="card"><div class="card-h"><h3>Production Health</h3><span class="muted" style="padding:0;font-size:12px">Error rate · last 24h</span></div><div id="ovHealth" class="muted">Loading…</div></div>
+    <div class="card"><div class="card-h"><h3>Active Incidents</h3><a class="viewall" href="#/investigations">View all →</a></div><div id="ovActive"><div class="muted">Loading…</div></div></div>
+    <div class="card"><div class="card-h"><h3>AI Investigation Summary</h3><span class="tag" style="background:#EEE9FE;color:#5B49D6">BETA</span></div><div id="ovAI"><div class="muted">Loading…</div></div></div>
   </div>
 
-  <div class="health">
-    <div class="health-h"><h3>System Health</h3><a class="viewall" href="#/services">View all services →</a></div>
-    <div id="ovHealth"><div class="muted">Loading…</div></div>
+  <div class="ov-row1">
+    <div class="card"><div class="card-h"><h3>Recent Deployments</h3><a class="viewall" href="#/repositories">View all →</a></div><div id="ovDeploys"><div class="muted">Loading…</div></div></div>
+    <div class="card"><div class="card-h"><h3>Recent Activity</h3><a class="viewall" href="#/investigations">View all →</a></div><div id="ovActivity"><div class="muted">Loading…</div></div></div>
+    <div class="card"><div class="card-h"><h3>Top Affected Services</h3><a class="viewall" href="#/services">View all →</a></div><div id="ovServices"><div class="muted">Loading…</div></div></div>
   </div>`;
+}
+function ovEnsureStyle(){
+  if(document.getElementById('ov-style')) return;
+  const s=document.createElement('style'); s.id='ov-style';
+  s.textContent=`
+  .ov-head{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+  .ov-status{display:inline-flex;align-items:center;gap:8px;font-size:13.5px;color:#1F9D57;font-weight:600}
+  .ov-status .dot{width:8px;height:8px;border-radius:50%;background:#1F9D57}
+  .ov-kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:18px}
+  @media(max-width:1100px){.ov-kpis{grid-template-columns:repeat(2,1fr)}}
+  .ov-kpi{background:#fff;border:1px solid var(--line);border-radius:16px;padding:15px 16px;display:flex;align-items:center;gap:13px}
+  .ov-kpi .v{font-size:24px;font-weight:800;color:#1A1630;line-height:1.1}
+  .ov-kpi .l{font-size:12.5px;color:var(--muted);margin-top:2px}
+  .ov-tile{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+  .ov-tile svg{width:20px;height:20px}
+  .ov-tile.red{background:#FDECEC;color:#DC2626}.ov-tile.violet{background:#EEE9FE;color:#5B49D6}.ov-tile.amber{background:#FEF3E2;color:#D97706}.ov-tile.green{background:#E7F6EC;color:#1F9D57}.ov-tile.blue{background:#E7EEFC;color:#2563EB}
+  .ov-row1{display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:16px;margin-bottom:16px}
+  @media(max-width:1100px){.ov-row1{grid-template-columns:1fr}}
+  .ov-inc{display:flex;align-items:center;gap:11px;padding:10px 0;border-bottom:1px solid var(--line)}
+  .ov-inc:last-child{border-bottom:0}
+  .ov-inc .tt{font-size:13.5px;font-weight:600;color:#211C3A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ov-inc .sub{font-size:12px;color:var(--muted)}
+  .ov-inc .ic{width:26px;height:26px;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+  .ov-inc .ic svg{width:16px;height:16px}
+  .sev{font-size:10.5px;font-weight:800;padding:3px 7px;border-radius:6px;flex:0 0 auto}
+  .sev.s1{background:#FDECEC;color:#DC2626}.sev.s2{background:#FEF3E2;color:#D97706}.sev.s3{background:#FDF6E3;color:#B8860B}
+  .ov-pill{font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px;background:#F1F1F4;color:#6E6A78;display:inline-block}
+  .ov-spark{width:64px;height:20px;vertical-align:middle}`;
+  document.head.appendChild(s);
 }
 
 function actIcon(kind){
@@ -373,57 +391,101 @@ function actIcon(kind){
   return `<span class="ic">${svg(ICN.info)}</span>`;
 }
 async function loadOverview(){
-  let d; try{ d=await (await rvApi('/overview')).json(); }catch(e){ return; }
+  let d, all;
+  try{ [d, all] = await Promise.all([ (await rvApi('/overview')).json(), (await rvApi('/incidents')).json() ]); }catch(e){ return; }
+  all = all || [];
   const S=d.stats||{}; const set=(id,v)=>{const el=document.getElementById(id); if(el) el.textContent=v;};
-  set('kServices',S.servicesMonitored); set('kActive',S.activeIncidents);
-  set('kDeploys',S.recentDeployments); set('kAlerts',S.alertsAnalyzed);
-  const bb=$('bellBadge'); if(bb){ bb.textContent=S.activeIncidents||0; bb.hidden=(S.activeIncidents||0)===0; }
+  const active=all.filter(i=>i.status!=='resolved'&&i.status!=='rejected');
+  const resolved=all.filter(i=>i.status==='resolved').length;
+  set('kActive', active.length); set('kServices', S.servicesMonitored);
+  set('kAlerts', S.alertsAnalyzed); set('kResolved', resolved); set('kDeploys', S.recentDeployments);
+  const bb=$('bellBadge'); if(bb){ bb.textContent=active.length; bb.hidden=active.length===0; }
 
-  const dot=document.getElementById('ovDot'), st=document.getElementById('ovStatus');
-  if(S.activeIncidents>0){ if(dot){dot.style.background='#DC2626';dot.style.boxShadow='0 0 0 3px rgba(220,38,38,.15)';} if(st) st.textContent=S.activeIncidents+' active incident'+(S.activeIncidents>1?'s':''); }
-  else if(st){ st.textContent='All systems operational'; }
+  const stt=$('ovStatus');
+  if(stt){ if(active.length){ stt.style.color='#DC2626'; stt.innerHTML=`<span class="dot" style="background:#DC2626"></span> ${active.length} active incident${active.length>1?'s':''}`; }
+    else { stt.style.color='#1F9D57'; stt.innerHTML='<span class="dot" style="background:#1F9D57"></span> All systems operational'; } }
 
-  const av=document.getElementById('ovActivity');
-  if(av){
-    if(!d.activity.length){ av.innerHTML='<div class="muted" style="padding:8px 2px">No recent activity yet — connect GitHub or simulate an incident.</div>'; }
-    else{
-      av.innerHTML=d.activity.map(a=>`<div class="act">${actIcon(a.kind)}<div class="m"><div class="tt">${a.title}</div><div class="sub">${a.service||''}</div></div><div class="time">${timeAgo(a.at)}</div></div>`).join('');
-      const al=document.getElementById('agentLast'); if(al) al.textContent='Last activity: '+timeAgo(d.activity[0].at);
-    }
+  // Production Health chart (real error rates over 24h)
+  const hv=$('ovHealth'); if(hv) hv.innerHTML=ovChart(all);
+
+  // Active Incidents
+  const ai=$('ovActive');
+  if(ai){ ai.innerHTML = active.length ? active.slice(0,6).map(i=>{
+      const pill = i.confidence ? 'Awaiting approval' : 'Investigating';
+      return `<div class="ov-inc" style="cursor:pointer" onclick="location.hash='#/investigations/${i.key}'"><span class="sev s${i.severity||1}">SEV-${i.severity||1}</span>
+        <div class="m" style="flex:1;min-width:0"><div class="tt">${i.title} ${i.isDemo?'<span class="tag">DEMO</span>':''}</div><div class="sub">${i.service||''}</div></div>
+        <div style="text-align:right;flex:0 0 auto"><div class="time">${timeAgo(i.startedAt)}</div><span class="ov-pill" style="color:#5B49D6">${pill}</span></div></div>`;
+    }).join('') : `<div class="empty" style="padding:24px 6px"><div class="orb">${svg(ICN.check)}</div><h4>No active incidents</h4><p>All clear across your connected stacks.</p></div>`; }
+
+  // AI Investigation Summary
+  ovAISummary(active);
+
+  // Recent Deployments
+  const dp=$('ovDeploys'); const deps=(d.activity||[]).filter(a=>a.kind==='deployment'||a.kind==='pr_merged'||a.kind==='push');
+  if(dp){ dp.innerHTML = deps.length ? deps.slice(0,5).map(a=>`<div class="ov-inc"><span class="ic">${a.kind==='deployment'?svg(ICN.rocket):B.github}</span>
+      <div class="m" style="flex:1;min-width:0"><div class="tt">${a.title}</div><div class="sub">${a.service||''}</div></div>
+      <div style="text-align:right;flex:0 0 auto"><div class="time">${timeAgo(a.at)}</div>${a.kind==='deployment'?'<span class="ov-pill" style="background:#E7F6EC;color:#1F9D57">Successful</span>':''}</div></div>`).join('')
+    : `<div class="muted" style="padding:16px 2px">No deployments yet — connect GitHub to see live deploys.</div>`; }
+
+  // Recent Activity
+  const av=$('ovActivity');
+  if(av){ av.innerHTML = (d.activity&&d.activity.length) ? d.activity.slice(0,6).map(a=>`<div class="ov-inc">${actIcon(a.kind)}
+      <div class="m" style="flex:1;min-width:0"><div class="tt">${a.title}</div><div class="sub">${a.service||''}</div></div>
+      <div class="time" style="flex:0 0 auto">${timeAgo(a.at)}</div></div>`).join('')
+    : '<div class="muted" style="padding:16px 2px">No recent activity yet — connect GitHub or simulate an incident.</div>'; }
+
+  // Top Affected Services (real, from incident error rates)
+  const sv=$('ovServices');
+  if(sv){
+    const by={};
+    all.forEach(i=>{ const s=i.service||'unknown'; const o=(by[s]=by[s]||{name:s,er:0,open:0,ers:[]});
+      if(i.status!=='resolved'&&i.status!=='rejected') o.open++;
+      if(i.errorRate){ o.er=Math.max(o.er,i.errorRate); o.ers.push(i.errorRate); } });
+    const rows=Object.values(by).sort((a,b)=>b.er-a.er||b.open-a.open).slice(0,6);
+    sv.innerHTML = rows.length ? `<table class="tbl" style="width:100%"><tbody>${rows.map(r=>{
+      const lvl=r.er>=8?['Critical','#DC2626']:r.er>=3?['High','#D97706']:r.er>=1?['Medium','#B8860B']:['Low','#1F9D57'];
+      return `<tr><td><div class="svc">${svg(ICN.cube)} ${r.name}</div></td><td style="text-align:right;font-weight:600">${r.er?r.er.toFixed(1)+'%':'—'}</td><td style="text-align:right">${ovSpark(r.ers,lvl[1])}</td><td style="text-align:right"><span class="ov-pill" style="color:${lvl[1]}">${lvl[0]}</span></td></tr>`;
+    }).join('')}</tbody></table>` : '<div class="muted" style="padding:16px 2px">No services yet — services appear once an incident is detected.</div>';
   }
-
-  const iv=document.getElementById('ovInvest');
-  if(iv){
-    if(!d.activeIncidents.length){
-      iv.innerHTML=`<div class="empty"><div class="orb">${svg(ICN.search)}</div><h4>No active investigations</h4><p>You're all caught up. When RootVector investigates incidents, they'll appear here.</p><a class="btn-outline" href="#/investigations">View investigations</a></div>`;
-    }else{
-      iv.innerHTML=d.activeIncidents.map(i=>{
-        const pending = i.confidence && i.status!=='resolved';
-        const pill = i.status==='resolved'
-          ? '<span class="badge-h"><span class="dot"></span>Resolved</span>'
-          : (pending
-              ? '<span class="badge-h" style="color:#B45309"><span class="dot" style="background:#D97706;box-shadow:0 0 0 3px rgba(217,119,6,.15)"></span>Awaiting your approval</span>'
-              : '<span class="badge-h" style="color:var(--violet-ink)"><span class="dot violet"></span>Investigating</span>');
-        return `<div class="act"><span class="ic" style="color:#DC2626">${svg(ICN.xcircle)}</span>
-          <div class="m"><div class="tt">${i.title} ${i.isDemo?'<span class="tag">DEMO</span>':''}</div>
-            <div class="sub">${i.key} · SEV${i.severity} · ${i.service} &nbsp; ${pill}</div></div>
-          <div style="display:flex;align-items:center;gap:12px;flex:0 0 auto">
-            ${i.confidence?`<span class="time">${i.confidence}%</span>`:''}
-            <button class="btn-outline" style="padding:7px 13px;font-size:13px;white-space:nowrap" onclick="location.hash='#/investigations/${i.key}'">Check detailed investigation →</button>
-          </div></div>`;
-      }).join('');
-    }
-  }
-
-  const hv=document.getElementById('ovHealth');
-  if(hv){
-    const degraded=new Set(d.activeIncidents.map(i=>i.service));
-    const names=[...new Set([...d.activeIncidents.map(i=>i.service), ...d.activity.map(a=>a.service).filter(Boolean)])];
-    if(!names.length){ hv.innerHTML=`<div class="empty" style="padding:30px 6px"><div class="orb">${svg(ICN.cube)}</div><h4>No services connected yet</h4><p>Connect GitHub and monitoring to start tracking service health.</p><a class="btn-outline" href="#/integrations">Connect your stack</a></div>`; }
-    else{
-      hv.innerHTML=`<table class="tbl"><thead><tr><th>Service</th><th>Status</th><th>Alerts</th></tr></thead><tbody>${names.map(n=>{const bad=degraded.has(n);return `<tr><td><div class="svc">${svg(ICN.cube)} ${n}</div></td><td>${bad?'<span class="badge-h" style="color:#DC2626"><span class="dot" style="background:#DC2626;box-shadow:0 0 0 3px rgba(220,38,38,.15)"></span>Degraded</span>':'<span class="badge-h"><span class="dot"></span>Healthy</span>'}</td><td>${bad?1:0}</td></tr>`;}).join('')}</tbody></table>`;
-    }
-  }
+}
+async function ovAISummary(active){
+  const el=$('ovAI'); if(!el) return;
+  const top=(active||[]).find(i=>i.confidence) || (active||[])[0];
+  if(!top){ el.innerHTML=`<div class="empty" style="padding:24px 6px"><div class="orb">${svg(ICN.search)}</div><h4>No analysis yet</h4><p>The AI summary appears when an incident is investigated.</p></div>`; return; }
+  let inc=top; try{ inc=await (await rvApi('/incidents/'+top.key)).json(); }catch(e){}
+  const evs=inc.events||[]; const rc=[...evs].reverse().find(e=>e.kind==='root_cause'); const conf=inc.confidence||(rc&&rc.data&&rc.data.confidence)||0;
+  const evidence=evs.filter(e=>e.kind==='evidence').slice(0,3);
+  el.innerHTML=`<div style="display:flex;align-items:center;gap:9px;margin-bottom:8px"><span class="sev s${inc.severity||1}">SEV-${inc.severity||1}</span><b style="font-size:14.5px">${inc.title}</b></div>
+    <div class="muted" style="padding:0;font-size:12px;margin-bottom:14px">${inc.key} · Started ${timeAgo(inc.startedAt)}</div>
+    <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700"><span>AI Confidence</span><span>${conf}%</span></div>
+    <div style="height:9px;border-radius:5px;background:#EEECF4;overflow:hidden;margin:6px 0 14px"><i style="display:block;height:100%;width:${conf}%;background:linear-gradient(90deg,#8B72F0,#5B49D6)"></i></div>
+    ${inc.rootCause?`<div style="font-size:11.5px;font-weight:800;color:#8A869A;text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px">Root cause</div><div style="font-weight:700;margin-bottom:2px">${inc.rootCause}</div>`:'<div class="muted" style="padding:0">Investigation in progress…</div>'}
+    ${evidence.length?`<div style="font-size:11.5px;font-weight:800;color:#8A869A;text-transform:uppercase;letter-spacing:.05em;margin:13px 0 6px">Evidence</div>${evidence.map(e=>`<div style="display:flex;gap:8px;font-size:12.5px;color:#4A4560;padding:3px 0"><span style="color:#1F9D57">✓</span><span>${e.message}</span></div>`).join('')}`:''}
+    <a class="btn-outline" style="display:block;text-align:center;margin-top:15px" href="#/investigations/${inc.key}">View full investigation →</a>`;
+}
+function ovSpark(vals,color){
+  if(!vals||!vals.length) return '';
+  const v=vals.slice(-8); const max=Math.max(...v,1),w=64,h=20,n=v.length,X=i=>n<2?w/2:i/(n-1)*w,Y=x=>h-2-(x/max)*(h-4);
+  let d='M'+X(0).toFixed(1)+' '+Y(v[0]).toFixed(1); v.forEach((x,i)=>d+=' L'+X(i).toFixed(1)+' '+Y(x).toFixed(1));
+  return `<svg class="ov-spark" viewBox="0 0 ${w} ${h}"><path d="${d}" fill="none" stroke="${color}" stroke-width="1.6"/></svg>`;
+}
+function ovChart(incidents){
+  const now=Date.now(), start=now-24*3600*1000, w=560, h=170, base=0.3;
+  const pts=(incidents||[]).filter(i=>i.errorRate && new Date(i.startedAt).getTime()>=start).map(i=>({t:new Date(i.startedAt).getTime(),v:i.errorRate,key:i.key}));
+  const N=80, xs=[];
+  for(let k=0;k<N;k++){ const t=start+(k/(N-1))*(now-start); let val=base; pts.forEach(p=>{ const dt=(t-p.t)/(3600*1000); val+=p.v*Math.exp(-(dt*dt)/(2*0.6*0.6)); }); xs.push(val); }
+  const max=Math.max(4, Math.max.apply(null,xs))*1.08, X=i=>i/(N-1)*w, Y=v=>h-6-(v/max)*(h-16);
+  let area='M0 '+(h-6); xs.forEach((v,i)=>area+=' L'+X(i).toFixed(1)+' '+Y(v).toFixed(1)); area+=' L'+w+' '+(h-6)+' Z';
+  let line='M0 '+Y(xs[0]).toFixed(1); xs.forEach((v,i)=>line+=' L'+X(i).toFixed(1)+' '+Y(v).toFixed(1));
+  const latest=pts.slice().sort((a,b)=>b.t-a.t)[0];
+  let marker='', cap='';
+  if(latest){ const mx=(latest.t-start)/(now-start)*w; marker=`<line x1="${mx.toFixed(1)}" y1="0" x2="${mx.toFixed(1)}" y2="${h-6}" stroke="#DC2626" stroke-width="1.2" stroke-dasharray="4 4"/>`;
+    cap=`<div style="font-size:11px;color:#DC2626;font-weight:700;margin:0 0 6px 2px">▲ latest incident · ${latest.key}</div>`; }
+  const yl=[max,max*0.75,max*0.5,max*0.25,0].map(v=>v.toFixed(1));
+  const t0=new Date(start).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',hour12:false});
+  return `${cap}<div style="display:flex;gap:8px"><div style="display:flex;flex-direction:column;justify-content:space-between;font-size:10px;color:#9A96A8;padding:2px 0 20px">${yl.map(v=>`<span>${v}%</span>`).join('')}</div>
+    <div style="flex:1;min-width:0"><svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" style="width:100%;height:190px;display:block"><defs><linearGradient id="ovg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8B72F0" stop-opacity=".4"/><stop offset="1" stop-color="#8B72F0" stop-opacity="0"/></linearGradient></defs><path d="${area}" fill="url(#ovg)"/><path d="${line}" fill="none" stroke="#7C6BF0" stroke-width="2"/>${marker}</svg>
+    <div style="display:flex;justify-content:space-between;font-size:10px;color:#9A96A8;margin-top:4px"><span>${t0}</span><span>Now</span></div></div></div>`;
 }
 async function simulateIncident(btn){
   if(btn){ btn.disabled=true; btn.textContent='Simulating…'; }
