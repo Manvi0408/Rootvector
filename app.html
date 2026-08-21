@@ -807,7 +807,11 @@ function helpEnsureStyle(){
   .help-input input{flex:1;border:0;outline:0;font:inherit;font-size:14px;background:transparent}
   .help-send{width:42px;height:42px;border-radius:50%;border:0;background:#1B1B22;color:#fff;font-size:18px;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
   .help-send:hover{background:#000}
-  .help-sub{color:var(--muted-2);font-size:14px;margin-top:22px}`;
+  .help-sub{color:var(--muted-2);font-size:14px;margin-top:22px}
+  .help-typing{display:inline-flex;gap:4px;align-items:center;padding:2px 0}
+  .help-typing i{width:6px;height:6px;border-radius:50%;background:#B5B2C4;display:inline-block;animation:helpDot 1.2s infinite ease-in-out}
+  .help-typing i:nth-child(2){animation-delay:.18s}.help-typing i:nth-child(3){animation-delay:.36s}
+  @keyframes helpDot{0%,80%,100%{transform:scale(.6);opacity:.4}40%{transform:scale(1);opacity:1}}`;
   document.head.appendChild(s);
 }
 function pageHelp(){
@@ -834,10 +838,32 @@ function helpRender(){
     const c=$('helpConv'); if(c) c.scrollTop=c.scrollHeight;
   }
 }
-function helpAsk(q){
+function helpGreeting(q){
+  const t=q.toLowerCase().trim();
+  if(/^(hi+|hey+|hello+|yo|hola|namaste|sup|greetings)\b/.test(t)) return 'Hello! 👋 How can I help you today? You can ask me how RootVector works, how incidents are solved, or anything about the app.';
+  if(/\b(thank|thanks|thx|thnx|ty|appreciate)\b/.test(t)) return "You're welcome! 😊 Anything else you'd like to know about RootVector?";
+  if(/\b(bye|goodbye|see ya|cya|later)\b/.test(t)) return "Take care! I'm right here whenever you need help with RootVector. 👋";
+  if(/\b(who are you|what are you|your name|what can you do)\b/.test(t)) return "I'm the RootVector Assistant 🤖 — I help you understand how the platform detects, investigates and resolves production incidents. Ask me anything!";
+  if(/\b(how are you|how'?s it going|how do you do)\b/.test(t)) return "I'm doing great, thanks for asking! Ready to help. What would you like to know about RootVector?";
+  if(/^(ok|okay|cool|nice|great|got it|thanks bro|👍)/.test(t)) return "Glad that helps! Ask me anything else about RootVector whenever you like.";
+  return null;
+}
+function helpFormat(t){ let s=String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); s=s.replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/\n/g,'<br>'); return s; }
+async function helpReply(q){
+  const g=helpGreeting(q); if(g) return g;                 // conversational replies, instant
+  try{                                                     // real LLM answer when Gemini is configured
+    const r=await rvApi('/help/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:q})});
+    if(r.ok){ const d=await r.json(); if(d && d.reply) return helpFormat(d.reply); }
+  }catch(e){}
+  return helpAnswer(q);                                    // fallback: built-in knowledge base
+}
+async function helpAsk(q){
   q=(q||'').trim(); if(!q) return;
   helpMsgs.push({role:'me',text:q.replace(/</g,'&lt;')});
-  helpMsgs.push({role:'ai',text:helpAnswer(q)});
+  helpMsgs.push({role:'ai',text:'<span class="help-typing"><i></i><i></i><i></i></span>'});
+  helpRender();
+  const reply=await helpReply(q);
+  helpMsgs[helpMsgs.length-1]={role:'ai',text:reply};
   helpRender();
 }
 function helpSend(){ const i=$('helpMsg'); if(!i) return; const v=i.value; i.value=''; helpAsk(v); i.focus(); }

@@ -24,6 +24,42 @@ export class LlmService {
     return !!process.env.GEMINI_API_KEY;
   }
 
+  /** Free-form help chat. Returns a conversational answer, or null if the LLM
+   *  isn't configured / failed (the caller then falls back to the local FAQ). */
+  async ask(message: string): Promise<string | null> {
+    if (!this.enabled) return null;
+    const system =
+      'You are the RootVector Assistant, a friendly AI helper inside RootVector — an AI ' +
+      'production-incident investigation platform. Context about RootVector: it connects to a ' +
+      "team's stack (GitHub, Sentry, Datadog, Grafana, Kubernetes, OpenTelemetry), detects incidents " +
+      'from real signals, runs an autonomous AI investigation that correlates deployments, PRs, errors ' +
+      'and traces to find a root cause with a confidence score, recommends a reversible fix, and requires ' +
+      'explicit human approval before executing anything; it then verifies recovery. The UI has pages: ' +
+      'Overview, Investigations, Services, History, Repositories, Integrations, Ask AI. ' +
+      'Answer the user conversationally and concisely (2-4 sentences). Greet back if greeted. ' +
+      'Prefer answering about RootVector, but you may answer general questions helpfully too.';
+    try {
+      const url =
+        `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(this.model)}:generateContent` +
+        `?key=${encodeURIComponent(process.env.GEMINI_API_KEY as string)}`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: system }] },
+          contents: [{ role: 'user', parts: [{ text: message }] }],
+          generationConfig: { maxOutputTokens: 512, temperature: 0.6 },
+        }),
+      });
+      if (!res.ok) return null;
+      const data: any = await res.json();
+      const text: string | undefined = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      return text ? text.trim() : null;
+    } catch {
+      return null;
+    }
+  }
+
   /** Analyze real incident evidence; returns a grounded verdict, or null if disabled/failed. */
   async analyze(input: { service: string; evidence: string[] }): Promise<Verdict | null> {
     if (!this.enabled) return null;

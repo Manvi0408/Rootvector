@@ -1,8 +1,9 @@
-import { Controller, Get, Post, Param, Sse, UseGuards, MessageEvent } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Sse, UseGuards, MessageEvent } from '@nestjs/common';
 import { Observable, interval, from } from 'rxjs';
 import { concatMap, mergeMap, map } from 'rxjs/operators';
 import { IncidentsService } from './incidents.service';
 import { AgentService } from './agent.service';
+import { LlmService } from './llm.service';
 import { IntegrationsService } from '../integrations/integrations.service';
 import { JwtAuthGuard, CurrentUser, AuthedUser } from '../auth/jwt.guard';
 
@@ -13,7 +14,16 @@ export class IncidentsController {
     private readonly incidents: IncidentsService,
     private readonly agent: AgentService,
     private readonly integrations: IntegrationsService,
+    private readonly llm: LlmService,
   ) {}
+
+  /** Help assistant — real LLM answer when Gemini is configured, else null so
+   *  the frontend falls back to its built-in knowledge base. */
+  @Post('help/chat')
+  async helpChat(@Body() b: { message: string }) {
+    const reply = await this.llm.ask((b?.message || '').slice(0, 1000));
+    return { reply, enabled: this.llm.enabled };
+  }
 
   @Get('overview')
   async overview(@CurrentUser() u: AuthedUser) {
