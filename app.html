@@ -319,10 +319,22 @@ function sparkline(pts,color){
 }
 
 /* ---------- pages ---------- */
+/* First name for the greeting: real profile name, else derived from the email. */
+function rvFirstName(){
+  const u = RV_USER || {};
+  if(u.firstName) return u.firstName;
+  if(u.name) return String(u.name).trim().split(/\s+/)[0];
+  if(u.email){
+    let p = String(u.email).split('@')[0].replace(/[._+\-].*$/,'').replace(/[0-9]+$/,'');
+    if(p) return p.charAt(0).toUpperCase()+p.slice(1);
+  }
+  return 'there';
+}
 function pageOverview(){
   ovEnsureStyle();
   setTimeout(loadOverview,0);
   return `
+  <div class="ov-greet">Welcome back, <b>${rvFirstName()}</b> 👋</div>
   <div class="ov-head">
     <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
       <h1 class="h1" style="margin:0">Production</h1>
@@ -358,6 +370,8 @@ function ovEnsureStyle(){
   if(document.getElementById('ov-style')) return;
   const s=document.createElement('style'); s.id='ov-style';
   s.textContent=`
+  .ov-greet{font-size:14px;color:var(--muted);margin-bottom:6px}
+  .ov-greet b{color:#1A1630;font-weight:800}
   .ov-head{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:18px}
   .ov-status{display:inline-flex;align-items:center;gap:8px;font-size:13.5px;color:#1F9D57;font-weight:600}
   .ov-status .dot{width:8px;height:8px;border-radius:50%;background:#1F9D57}
