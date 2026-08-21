@@ -53,20 +53,6 @@ RootVector uses a provider-based integration framework — connect a tool and it
 
 ---
 
-## Screenshots
-
-A walkthrough of a single incident, from detection to verified recovery:
-
-| Error detected | Incident detected | Agent investigates |
-|---|---|---|
-| ![Error detected](assets/demo-1.png) | ![Incident detected](assets/demo-2.png) | ![Agent investigates](assets/demo-3.png) |
-
-| Root cause found | Fix recommended | Recovery verified |
-|---|---|---|
-| ![Root cause found](assets/demo-4.png) | ![Fix recommended](assets/demo-5.png) | ![Recovery verified](assets/demo-6.png) |
-
----
-
 ## What it does
 
 ```
