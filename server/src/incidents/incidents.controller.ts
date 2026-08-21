@@ -45,6 +45,28 @@ export class IncidentsController {
     return this.incidents.list();
   }
 
+  /** Recent incidents for the notification bell. */
+  @Get('notifications')
+  notifications() {
+    return this.incidents.list();
+  }
+
+  /** Live notifications (SSE) — pushes every NEW incident the moment it's created,
+   *  from any source (GitHub webhooks, Sentry, demo). Drives the bell in real time. */
+  @Sse('notifications/stream')
+  notificationsStream(): Observable<MessageEvent> {
+    let since = Date.now();
+    return interval(2000).pipe(
+      concatMap(async () => {
+        const list = await this.incidents.recentSince(since).catch(() => [] as any[]);
+        if (list.length) since = new Date(list[list.length - 1].startedAt).getTime();
+        return list;
+      }),
+      mergeMap((list) => from(list)),
+      map((inc) => ({ data: inc }) as MessageEvent),
+    );
+  }
+
   @Get('incidents/:key')
   get(@Param('key') key: string) {
     return this.incidents.get(key);

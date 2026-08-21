@@ -736,35 +736,59 @@ function loadSettings(){
   const av=$('setAvatar'); if(av) av.innerHTML=rvAvatarInner(u);
 }
 
-/* ---------- notifications ---------- */
+/* ---------- notifications (live) ---------- */
 async function updateBell(){
   try{
-    const d=await (await rvApi('/overview')).json();
-    const n=d.stats.activeIncidents||0;
-    const b=$('bellBadge'); if(b){ b.textContent=n; b.hidden = n===0; }
+    const list=await (await rvApi('/notifications')).json();
+    const n=(list||[]).filter(i=>i.status!=='resolved').length;
+    const b=$('bellBadge'); if(b){ b.textContent=n>99?'99+':n; b.hidden = n===0; }
   }catch(e){}
+}
+async function loadNotifBody(){
+  const body=document.getElementById('notifBody'); if(!body) return;
+  try{
+    const list=await (await rvApi('/notifications')).json();
+    const items=(list||[]).map(i=>({
+      color: i.status==='resolved' ? '#1F9D57' : (i.severity===1?'#DC2626':'#D97706'),
+      t: i.title + (i.isDemo?' · DEMO':''),
+      s: i.key+' · '+(i.source||'system').toUpperCase()+' · '+(i.status||''),
+      at: i.startedAt,
+      hash:'#/investigations/'+i.key
+    }));
+    body.innerHTML = items.length
+      ? items.map(x=>`<div class="notif-item" onclick="location.hash='${x.hash}';rvCloseNotif()" style="cursor:pointer"><span class="ic" style="color:${x.color}">${svg(ICN.xcircle)}</span><div style="min-width:0"><div style="font-size:13.5px;font-weight:600">${x.t}</div><div class="muted" style="padding:0;font-size:12px">${x.s}${x.at?' · '+timeAgo(x.at):''}</div></div></div>`).join('')
+      : `<div class="empty" style="padding:20px 6px"><div class="orb" style="width:52px;height:52px">${svg(ICN.bell)}</div><h4>You're all caught up</h4><p>New incidents appear here in real time.</p></div>`;
+  }catch(e){ body.innerHTML='<div class="muted" style="padding:10px">Could not load.</div>'; }
 }
 async function toggleNotif(e){
   if(e) e.stopPropagation();
   let p=document.getElementById('notifPanel');
   if(p){ p.remove(); return; }
   p=document.createElement('div'); p.className='menu'; p.id='notifPanel';
-  p.style.width='330px'; p.style.right='64px'; p.style.top='60px';
+  p.style.width='340px'; p.style.right='64px'; p.style.top='60px';
   p.innerHTML='<div class="menu-head" style="border-bottom:1px solid var(--line);padding:10px 10px 12px"><div class="nm">Notifications</div></div><div id="notifBody"><div class="muted" style="padding:10px">Loading…</div></div>';
   document.querySelector('.topbar').appendChild(p);
-  try{
-    const d=await (await rvApi('/overview')).json();
-    const items=[];
-    (d.activeIncidents||[]).forEach(i=>items.push({ic:svg(ICN.xcircle),color:'#DC2626',t:i.title+(i.isDemo?' · DEMO':''),s:i.key+' · SEV'+i.severity+' · investigating',hash:'#/investigations/'+i.key}));
-    (d.activity||[]).slice(0,5).forEach(a=>items.push({ic:actIcon(a.kind).replace(/<span[^>]*>|<\/span>/g,''),color:'',t:a.title,s:a.service||'',at:a.at}));
-    const body=document.getElementById('notifBody');
-    body.innerHTML = items.length
-      ? items.map(x=>`<div class="notif-item" ${x.hash?`onclick="location.hash='${x.hash}';rvCloseNotif()" style="cursor:pointer"`:''}><span class="ic" style="color:${x.color||'var(--muted)'}">${x.ic}</span><div style="min-width:0"><div style="font-size:13.5px;font-weight:600">${x.t}</div><div class="muted" style="padding:0;font-size:12px">${x.s}${x.at?' · '+timeAgo(x.at):''}</div></div></div>`).join('')
-      : `<div class="empty" style="padding:20px 6px"><div class="orb" style="width:52px;height:52px">${svg(ICN.bell)}</div><h4>You're all caught up</h4><p>New incidents and activity show up here.</p></div>`;
-  }catch(e){ const b=document.getElementById('notifBody'); if(b) b.innerHTML='<div class="muted" style="padding:10px">Could not load.</div>'; }
+  loadNotifBody();
 }
 function rvCloseNotif(){ const p=document.getElementById('notifPanel'); if(p) p.remove(); }
 document.addEventListener('click', e => { if(!e.target.closest('#bell') && !e.target.closest('#notifPanel')) rvCloseNotif(); });
+
+/* real-time incident feed: any new incident (GitHub webhook, Sentry, demo) pushes here instantly */
+let rvNotifES=null;
+function startNotifStream(){
+  try{
+    if(rvNotifES) rvNotifES.close();
+    rvNotifES=new EventSource(RV_API+'/notifications/stream',{withCredentials:true});
+    rvNotifES.onmessage=ev=>{
+      let inc; try{ inc=JSON.parse(ev.data); }catch(e){ return; }
+      if(!inc || !inc.key) return;
+      toast('🚨 New incident · '+inc.title);
+      updateBell();
+      if(document.getElementById('notifPanel')) loadNotifBody();
+      if(currentKey()==='overview' && typeof loadOverview==='function') loadOverview();
+    };
+  }catch(e){}
+}
 
 /* ---------- feedback ---------- */
 function feedbackModal(){
@@ -828,6 +852,8 @@ async function rvSignOut(){
   if(!location.hash) location.hash = '#/overview';
   route();
   updateBell();
+  setInterval(updateBell, 25000);   // fallback resync (e.g. after resolutions)
+  startNotifStream();               // live push for brand-new incidents
 })();
 </script>
 </body>

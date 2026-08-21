@@ -58,6 +58,14 @@ export class IncidentsService {
     return this.prisma.incident.findMany({ orderBy: { startedAt: 'desc' }, take: 50 });
   }
 
+  /** Incidents created after a timestamp — powers the live notifications stream. */
+  async recentSince(ts: number) {
+    return this.prisma.incident.findMany({
+      where: { startedAt: { gt: new Date(ts) } },
+      orderBy: { startedAt: 'asc' },
+    });
+  }
+
   /** Is there already an unresolved incident for this service? (dedup) */
   async hasActive(service: string) {
     return this.prisma.incident.findFirst({

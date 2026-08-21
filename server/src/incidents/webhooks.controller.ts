@@ -59,8 +59,40 @@ export class WebhooksController {
         title: `${(body.commits || []).length} commit(s) pushed`,
         service: body.repository?.name,
       });
+    } else if (event === 'issues' && ['opened', 'reopened'].includes(body.action)) {
+      // A new GitHub issue = a reported problem → open a real incident.
+      await this.openFromGithub(
+        body.repository?.name || 'github',
+        `Issue: ${body.issue?.title || 'New issue'}`,
+        body.issue?.html_url, false,
+      );
+    } else if (event === 'workflow_run' && body.action === 'completed' && body.workflow_run?.conclusion === 'failure') {
+      // A failed CI/deploy workflow → open a real incident (deduped per service).
+      await this.openFromGithub(
+        body.repository?.name || 'github',
+        `Workflow failed: ${body.workflow_run?.name || ''}`.trim(),
+        body.workflow_run?.html_url, true,
+      );
+    } else if (event === 'check_run' && body.action === 'completed' && body.check_run?.conclusion === 'failure') {
+      await this.openFromGithub(
+        body.repository?.name || 'github',
+        `Check failed: ${body.check_run?.name || ''}`.trim(),
+        body.check_run?.html_url, true,
+      );
     }
     return { ok: true };
+  }
+
+  /** Turn a GitHub problem into a real incident (+ live AI investigation). */
+  private async openFromGithub(service: string, title: string, url: string | undefined, dedupByService: boolean) {
+    await this.incidents.addActivity({ kind: 'error', title, service, url });
+    if (dedupByService) {
+      const existing = await this.incidents.hasActive(service);
+      if (existing) return existing;
+    }
+    const inc = await this.incidents.create({ title, service, severity: 2, source: 'github' });
+    this.agent.run(inc.id).catch(() => undefined);
+    return inc;
   }
 
   @Post('sentry')
