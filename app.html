@@ -7,13 +7,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{
   --bg:#fff; --panel:#fff; --line:#ECEDF1; --line-2:#F3F3F6; --hover:#F7F7FA;
   --ink:#161922; --ink-2:#3A3F4C; --muted:#6B7280; --muted-2:#9AA1AD;
   --violet:#6D5AE6; --violet-ink:#5B49D6; --violet-soft:#EEEBFB; --violet-soft-2:#F5F3FD;
   --green:#16A34A; --green-soft:#E7F6EC; --red:#DC2626;
-  --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --sans:'Inter',ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
   --shadow:0 1px 2px rgba(17,20,28,.04),0 8px 24px -16px rgba(17,20,28,.18);
 }
 *{box-sizing:border-box}
@@ -334,10 +337,10 @@ function pageOverview(){
   ovEnsureStyle();
   setTimeout(loadOverview,0);
   return `
-  <div class="ov-greet">Welcome back, <b>${rvFirstName()}</b> 👋</div>
+  <div class="ov-greet">Welcome back, <b>${rvFirstName()}</b> <span class="wave">👋</span></div>
   <div class="ov-head">
-    <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
-      <h1 class="h1" style="margin:0">Production</h1>
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <span class="ov-crumb">Production</span>
       <span class="ov-status" id="ovStatus"><span class="dot"></span> All systems operational</span>
     </div>
     <div style="display:flex;gap:10px">
@@ -370,8 +373,11 @@ function ovEnsureStyle(){
   if(document.getElementById('ov-style')) return;
   const s=document.createElement('style'); s.id='ov-style';
   s.textContent=`
-  .ov-greet{font-size:14px;color:var(--muted);margin-bottom:6px}
-  .ov-greet b{color:#1A1630;font-weight:800}
+  .ov-greet{font-size:clamp(27px,3.4vw,36px);font-weight:800;letter-spacing:-.025em;color:#12141C;margin:2px 0 8px;display:flex;align-items:center;gap:10px}
+  .ov-greet b{color:var(--violet-ink);font-weight:800}
+  .wave{display:inline-block;transform-origin:72% 78%;animation:wave 2.4s ease-in-out infinite}
+  @keyframes wave{0%,62%,100%{transform:rotate(0)}10%,30%{transform:rotate(15deg)}20%{transform:rotate(-9deg)}40%{transform:rotate(11deg)}50%{transform:rotate(-3deg)}}
+  .ov-crumb{font-size:15px;font-weight:700;color:var(--ink)}
   .ov-head{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:18px}
   .ov-status{display:inline-flex;align-items:center;gap:8px;font-size:13.5px;color:#1F9D57;font-weight:600}
   .ov-status .dot{width:8px;height:8px;border-radius:50%;background:#1F9D57}
