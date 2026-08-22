@@ -178,6 +178,13 @@ export class AuthController {
       email,
       avatar_url: gh.avatar_url,
     });
+    // Signing in WITH GitHub also connects it as an integration, so the user
+    // lands straight on their dashboard (real repos/activity) — never asked to
+    // "connect your stack" again. Their token/repos are their own (per user).
+    try {
+      const scope = (tok?.scope as string) || 'read:user user:email';
+      await this.integrations.connect(user.id, 'github', access, gh.login, scope);
+    } catch { /* non-fatal: auth still succeeds */ }
     setSession(res, this.auth.sign(user));
     res.redirect(`${front}/app.html?t=${Date.now()}`);
   }
