@@ -9,6 +9,7 @@
 <meta property="og:title" content="RootVector — AI Production Investigation">
 <meta property="og:description" content="Find the cause. Verify the evidence. Fix the system.">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1559,8 +1560,12 @@ document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
 <!-- ========== floating Ask-AI chatbox (public, draggable) ========== -->
 <style>
 .rv-cb{position:fixed;right:22px;bottom:22px;z-index:9000}
-.rv-cb-fab{width:60px;height:60px;border-radius:50%;border:0;cursor:grab;background:#fff;box-shadow:0 12px 32px -6px rgba(30,20,60,.45);display:flex;align-items:center;justify-content:center;padding:0}
+.rv-cb-fab{position:relative;width:64px;height:64px;border-radius:50%;border:2px solid rgba(124,107,240,.35);cursor:grab;background:#fff;box-shadow:0 14px 36px -6px rgba(109,90,230,.55);display:flex;align-items:center;justify-content:center;padding:0}
 .rv-cb-fab:active{cursor:grabbing}
+.rv-cb-fab::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:2px solid rgba(124,107,240,.55);animation:rvcbPulse 2s ease-out infinite;pointer-events:none}
+@keyframes rvcbPulse{0%{transform:scale(.92);opacity:.75}100%{transform:scale(1.45);opacity:0}}
+.rv-cb-hint{position:absolute;right:74px;bottom:16px;background:#1B1B22;color:#fff;font-size:12.5px;font-weight:600;padding:8px 12px;border-radius:11px;white-space:nowrap;box-shadow:0 8px 20px -8px rgba(0,0,0,.5)}
+.rv-cb-hint::after{content:"";position:absolute;right:-5px;bottom:14px;width:10px;height:10px;background:#1B1B22;transform:rotate(45deg)}
 .rv-cb-orb{width:40px;height:40px;border-radius:50%;background:radial-gradient(circle at 34% 30%,#fff 0%,#ffd9e6 32%,#cfe0ff 62%,#dcc9ff 100%);box-shadow:0 0 0 6px rgba(180,200,255,.16);animation:rvcbF 3s ease-in-out infinite}
 .rv-cb-orb.sm{width:30px;height:30px;box-shadow:none;flex:0 0 auto;animation:none}
 @keyframes rvcbF{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
@@ -1586,6 +1591,7 @@ document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
     <div class="rv-cb-body" id="rvCbBody"></div>
     <div class="rv-cb-input"><input id="rvCbMsg" placeholder="Ask me anything about RootVector" onkeydown="if(event.key==='Enter'){event.preventDefault();rvCbSend();}"><button onclick="rvCbSend()" aria-label="Send">↑</button></div>
   </div>
+  <div class="rv-cb-hint" id="rvCbHint">Ask AI ✨</div>
   <button class="rv-cb-fab" id="rvCbFab" aria-label="Ask AI about RootVector"><span class="rv-cb-orb"></span></button>
 </div>
 <script>
@@ -1618,7 +1624,8 @@ document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
     if(!msgs.length){ b.innerHTML='<div class="rv-cb-empty"><span class="rv-cb-orb"></span><div style="font-weight:700;color:#1A1630;font-size:14px">Ask me anything about RootVector</div><div style="font-size:12px;margin-top:4px">What it is, how it works, how to get started.</div></div>'; return; }
     b.innerHTML=msgs.map(function(m){return '<div class="rv-cb-b '+m.role+'">'+m.text+'</div>';}).join(''); b.scrollTop=b.scrollHeight;
   }
-  window.rvCbToggle=function(){ var p=document.getElementById('rvCbPanel'); if(!p) return; p.hidden=!p.hidden; if(!p.hidden){ render(); var i=document.getElementById('rvCbMsg'); if(i) setTimeout(function(){i.focus();},30); } };
+  window.rvCbToggle=function(){ var p=document.getElementById('rvCbPanel'); if(!p) return; var hint=document.getElementById('rvCbHint'); if(hint) hint.style.display='none'; p.hidden=!p.hidden; if(!p.hidden){ render(); var i=document.getElementById('rvCbMsg'); if(i) setTimeout(function(){i.focus();},30); } };
+  setTimeout(function(){ var h=document.getElementById('rvCbHint'); if(h && document.getElementById('rvCbPanel').hidden) h.style.display='none'; }, 12000);
   window.rvCbSend=async function(){ var i=document.getElementById('rvCbMsg'); if(!i) return; var q=(i.value||'').trim(); if(!q) return; i.value='';
     msgs.push({role:'me',text:esc(q)}); msgs.push({role:'ai',text:'<span class="rv-cb-typing"><i></i><i></i><i></i></span>'}); render();
     var reply=null;
