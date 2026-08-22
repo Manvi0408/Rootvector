@@ -27,7 +27,7 @@ export class IncidentsController {
 
   @Get('overview')
   async overview(@CurrentUser() u: AuthedUser) {
-    const base = await this.incidents.overview();
+    const base = await this.incidents.overview(u.userId);
     // Pull recent LIVE GitHub activity so the dashboard fills the moment you connect.
     const gh = await this.integrations.githubActivity(u.userId).catch(() => null);
     if (gh && gh.length) {
@@ -51,24 +51,24 @@ export class IncidentsController {
   }
 
   @Get('incidents')
-  list() {
-    return this.incidents.list();
+  list(@CurrentUser() u: AuthedUser) {
+    return this.incidents.list(u.userId);
   }
 
   /** Recent incidents for the notification bell. */
   @Get('notifications')
-  notifications() {
-    return this.incidents.list();
+  notifications(@CurrentUser() u: AuthedUser) {
+    return this.incidents.list(u.userId);
   }
 
   /** Live notifications (SSE) — pushes every NEW incident the moment it's created,
    *  from any source (GitHub webhooks, Sentry, demo). Drives the bell in real time. */
   @Sse('notifications/stream')
-  notificationsStream(): Observable<MessageEvent> {
+  notificationsStream(@CurrentUser() u: AuthedUser): Observable<MessageEvent> {
     let since = Date.now();
     return interval(2000).pipe(
       concatMap(async () => {
-        const list = await this.incidents.recentSince(since).catch(() => [] as any[]);
+        const list = await this.incidents.recentSince(since, u.userId).catch(() => [] as any[]);
         if (list.length) since = new Date(list[list.length - 1].startedAt).getTime();
         return list;
       }),
@@ -78,17 +78,17 @@ export class IncidentsController {
   }
 
   @Get('incidents/:key')
-  get(@Param('key') key: string) {
-    return this.incidents.get(key);
+  get(@Param('key') key: string, @CurrentUser() u: AuthedUser) {
+    return this.incidents.get(key, u.userId);
   }
 
   /** Live investigation stream (Server-Sent Events) — pushes new events as the agent works. */
   @Sse('incidents/:key/stream')
-  stream(@Param('key') key: string): Observable<MessageEvent> {
+  stream(@Param('key') key: string, @CurrentUser() u: AuthedUser): Observable<MessageEvent> {
     let lastAt = 0;
     return interval(700).pipe(
       concatMap(async () => {
-        const inc = await this.incidents.get(key).catch(() => null);
+        const inc = await this.incidents.get(key, u.userId).catch(() => null);
         if (!inc) return [] as any[];
         const fresh = inc.events.filter((e) => new Date(e.at).getTime() > lastAt);
         if (fresh.length) lastAt = new Date(fresh[fresh.length - 1].at).getTime();
@@ -104,27 +104,27 @@ export class IncidentsController {
 
   /** Human approval → real remediation + verification + resolution. */
   @Post('incidents/:key/approve')
-  approve(@Param('key') key: string) {
-    return this.incidents.approve(key);
+  approve(@Param('key') key: string, @CurrentUser() u: AuthedUser) {
+    return this.incidents.approve(key, u.userId);
   }
 
   /** Human rejected the recommendation → recorded in History as cancelled. */
   @Post('incidents/:key/reject')
-  reject(@Param('key') key: string) {
-    return this.incidents.reject(key);
+  reject(@Param('key') key: string, @CurrentUser() u: AuthedUser) {
+    return this.incidents.reject(key, u.userId);
   }
 
   /** DEV/DEMO: simulate an incident, then let the agent investigate it live. */
   @Post('dev/simulate-incident')
-  async simulate() {
-    const inc = await this.incidents.simulate();
+  async simulate(@CurrentUser() u: AuthedUser) {
+    const inc = await this.incidents.simulate(u.userId);
     this.agent.run(inc.id).catch(() => undefined); // fire-and-forget; streamed via SSE
     return inc;
   }
 
   /** DEV: clear all demo incidents + seeded activity. */
   @Post('dev/reset-demo')
-  resetDemo() {
-    return this.incidents.resetDemo();
+  resetDemo(@CurrentUser() u: AuthedUser) {
+    return this.incidents.resetDemo(u.userId);
   }
 }

@@ -5,6 +5,7 @@ import * as crypto from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { IncidentsService } from './incidents.service';
 import { AgentService } from './agent.service';
+import { IntegrationsService } from '../integrations/integrations.service';
 
 /** GitHub & Sentry webhook receivers. NOT auth-guarded (providers can't send a
  *  session cookie) — instead every delivery is verified by HMAC signature. */
@@ -14,6 +15,7 @@ export class WebhooksController {
     private readonly prisma: PrismaService,
     private readonly incidents: IncidentsService,
     private readonly agent: AgentService,
+    private readonly integrations: IntegrationsService,
   ) {}
 
   private verify(raw: Buffer | undefined, secret: string | undefined, sig: string | undefined, scheme: 'gh' | 'sentry'): boolean {
@@ -40,6 +42,10 @@ export class WebhooksController {
     if (!verified) return { ok: false, reason: 'signature not verified' };
 
     const body: any = req.body || {};
+    // Attribute everything from this repo to the RootVector user who connected it.
+    const ownerLogin = body.repository?.owner?.login || body.organization?.login || '';
+    const repoFullName = body.repository?.full_name || null;
+    const ownerUserId = await this.integrations.userIdByGithubLogin(ownerLogin).catch(() => null);
     if (event === 'pull_request' && body.action === 'closed' && body.pull_request?.merged) {
       await this.incidents.addActivity({
         kind: 'pr_merged',
@@ -61,10 +67,12 @@ export class WebhooksController {
       });
     } else if (event === 'issues' && ['opened', 'reopened'].includes(body.action)) {
       // A new GitHub issue = a reported problem → open a real incident.
+      // Store the issue reference so approval can comment on + close the real issue.
       await this.openFromGithub(
         body.repository?.name || 'github',
         `Issue: ${body.issue?.title || 'New issue'}`,
         body.issue?.html_url, false,
+        { userId: ownerUserId, repoFullName, issueNumber: body.issue?.number ?? null },
       );
     } else if (event === 'workflow_run' && body.action === 'completed' && body.workflow_run?.conclusion === 'failure') {
       // A failed CI/deploy workflow → open a real incident (deduped per service).
@@ -72,12 +80,14 @@ export class WebhooksController {
         body.repository?.name || 'github',
         `Workflow failed: ${body.workflow_run?.name || ''}`.trim(),
         body.workflow_run?.html_url, true,
+        { userId: ownerUserId, repoFullName },
       );
     } else if (event === 'check_run' && body.action === 'completed' && body.check_run?.conclusion === 'failure') {
       await this.openFromGithub(
         body.repository?.name || 'github',
         `Check failed: ${body.check_run?.name || ''}`.trim(),
         body.check_run?.html_url, true,
+        { userId: ownerUserId, repoFullName },
       );
     }
     return { ok: true };
@@ -161,14 +171,26 @@ export class WebhooksController {
     return this.ingestAlerts('opentelemetry', req, token, this.normalizeGeneric(req.body || {}));
   }
 
-  /** Turn a GitHub problem into a real incident (+ live AI investigation). */
-  private async openFromGithub(service: string, title: string, url: string | undefined, dedupByService: boolean) {
+  /** Turn a GitHub problem into a real incident (+ live AI investigation),
+   *  attributed to the repo owner and (for issues) linked to the real issue. */
+  private async openFromGithub(
+    service: string,
+    title: string,
+    url: string | undefined,
+    dedupByService: boolean,
+    ref?: { userId?: string | null; repoFullName?: string | null; issueNumber?: number | null },
+  ) {
     await this.incidents.addActivity({ kind: 'error', title, service, url });
     if (dedupByService) {
-      const existing = await this.incidents.hasActive(service);
+      const existing = await this.incidents.hasActive(service, ref?.userId ?? undefined);
       if (existing) return existing;
     }
-    const inc = await this.incidents.create({ title, service, severity: 2, source: 'github' });
+    const inc = await this.incidents.create({
+      title, service, severity: 2, source: 'github',
+      userId: ref?.userId ?? null,
+      repoFullName: ref?.repoFullName ?? null,
+      issueNumber: ref?.issueNumber ?? null,
+    });
     this.agent.run(inc.id).catch(() => undefined);
     return inc;
   }

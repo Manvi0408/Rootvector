@@ -51,18 +51,23 @@ model Integration {
 model Incident {
   id          String    @id @default(cuid())
   key         String    @unique          // e.g. INC-4821
+  userId      String?                    // owner: who sees it (null = legacy/global)
   title       String
   service     String
   severity    Int       @default(2)      // 1 = SEV1 … 3 = SEV3
-  status      String    @default("active") // active | investigating | resolved
-  source      String                     // sentry | github | demo | manual
+  status      String    @default("active") // active | investigating | resolved | rejected
+  source      String                     // sentry | github | datadog | grafana | demo | manual
   isDemo      Boolean   @default(false)
   errorRate   Float?
   rootCause   String?
   confidence  Int?
+  repoFullName String?                   // e.g. Manvi0408/Rootvector (for GitHub issue actions)
+  issueNumber Int?                       // GitHub issue number, if this incident is a GitHub issue
   startedAt   DateTime  @default(now())
   resolvedAt  DateTime?
   events      IncidentEvent[]
+
+  @@index([userId])
 }
 
 // Every step of an investigation is a real, persisted event (streamed to the UI).

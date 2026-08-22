@@ -122,6 +122,43 @@ export class IntegrationsService {
     return gh.repositories();
   }
 
+  /** Which user connected a GitHub account matching this owner/login (for
+   *  attributing webhook incidents to the repo owner). */
+  async userIdByGithubLogin(login: string): Promise<string | null> {
+    if (!login) return null;
+    const row = await this.prisma.integration.findFirst({
+      where: { provider: 'github', externalLogin: { equals: login, mode: 'insensitive' } },
+      orderBy: { createdAt: 'desc' },
+    });
+    return row?.userId ?? null;
+  }
+
+  /** Comment on and close a real GitHub issue using the owner's stored token
+   *  (needs `repo` scope). Returns false if not connected / no write access. */
+  async closeGithubIssue(userId: string, repoFullName: string, issueNumber: number, comment: string): Promise<boolean> {
+    const row = await this.prisma.integration.findUnique({
+      where: { userId_provider: { userId, provider: 'github' } },
+    });
+    if (!row) return false;
+    let token: string;
+    try { token = this.crypto.decrypt(row.accessTokenEnc); } catch { return false; }
+    const headers = {
+      Authorization: `Bearer ${token}`,
+      'User-Agent': 'rootvector',
+      Accept: 'application/vnd.github+json',
+      'Content-Type': 'application/json',
+    };
+    try {
+      await fetch(`https://api.github.com/repos/${repoFullName}/issues/${issueNumber}/comments`, {
+        method: 'POST', headers, body: JSON.stringify({ body: comment }),
+      });
+      await fetch(`https://api.github.com/repos/${repoFullName}/issues/${issueNumber}`, {
+        method: 'PATCH', headers, body: JSON.stringify({ state: 'closed' }),
+      });
+      return true;
+    } catch { return false; }
+  }
+
   /** Recent live GitHub activity for the user, or null if GitHub isn't connected. */
   async githubActivity(userId: string): Promise<any[] | null> {
     const row = await this.prisma.integration.findUnique({

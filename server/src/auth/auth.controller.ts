@@ -94,7 +94,9 @@ export class AuthController {
     const params = new URLSearchParams({
       client_id: clientId,
       redirect_uri: GH_CALLBACK(),
-      scope: 'read:user user:email',
+      // `repo` lets RootVector comment on + close the real GitHub issue after a
+      // human approves the fix ("RootVector solved this").
+      scope: 'read:user user:email repo',
       state: Math.random().toString(36).slice(2),
     });
     res.redirect(`https://github.com/login/oauth/authorize?${params.toString()}`);
@@ -182,7 +184,7 @@ export class AuthController {
     // lands straight on their dashboard (real repos/activity) — never asked to
     // "connect your stack" again. Their token/repos are their own (per user).
     try {
-      const scope = (tok?.scope as string) || 'read:user user:email';
+      const scope = (tok?.scope as string) || 'read:user user:email repo';
       await this.integrations.connect(user.id, 'github', access, gh.login, scope);
     } catch { /* non-fatal: auth still succeeds */ }
     setSession(res, this.auth.sign(user));
