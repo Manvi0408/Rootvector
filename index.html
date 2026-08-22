@@ -1555,5 +1555,91 @@ document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
   loop();
 })();
 </script>
+
+<!-- ========== floating Ask-AI chatbox (public, draggable) ========== -->
+<style>
+.rv-cb{position:fixed;right:22px;bottom:22px;z-index:9000}
+.rv-cb-fab{width:60px;height:60px;border-radius:50%;border:0;cursor:grab;background:#fff;box-shadow:0 12px 32px -6px rgba(30,20,60,.45);display:flex;align-items:center;justify-content:center;padding:0}
+.rv-cb-fab:active{cursor:grabbing}
+.rv-cb-orb{width:40px;height:40px;border-radius:50%;background:radial-gradient(circle at 34% 30%,#fff 0%,#ffd9e6 32%,#cfe0ff 62%,#dcc9ff 100%);box-shadow:0 0 0 6px rgba(180,200,255,.16);animation:rvcbF 3s ease-in-out infinite}
+.rv-cb-orb.sm{width:30px;height:30px;box-shadow:none;flex:0 0 auto;animation:none}
+@keyframes rvcbF{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+.rv-cb-panel{position:absolute;right:0;bottom:74px;width:340px;max-width:calc(100vw - 40px);background:#fff;border:1px solid #ECECF1;border-radius:20px;box-shadow:0 34px 80px -22px rgba(20,16,40,.5);overflow:hidden;color:#1B1A17;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,sans-serif}
+.rv-cb-head{display:flex;align-items:center;gap:10px;padding:13px 14px;border-bottom:1px solid #F0F0F4;cursor:grab}
+.rv-cb-title{font-size:13.5px;font-weight:700;color:#1A1630}
+.rv-cb-x{margin-left:auto;border:0;background:none;font-size:15px;color:#8A8690;cursor:pointer}
+.rv-cb-body{max-height:44vh;overflow:auto;padding:14px;display:flex;flex-direction:column;gap:10px;background:#FAFAFC}
+.rv-cb-empty{text-align:center;padding:12px 6px;color:#6E6A62}
+.rv-cb-empty .rv-cb-orb{margin:0 auto 10px}
+.rv-cb-b{max-width:88%;padding:10px 12px;border-radius:13px;font-size:13px;line-height:1.5}
+.rv-cb-b.me{align-self:flex-end;background:#6D5AE6;color:#fff;border-bottom-right-radius:5px}
+.rv-cb-b.ai{align-self:flex-start;background:#fff;border:1px solid #ECECF1;color:#241F35;border-bottom-left-radius:5px}
+.rv-cb-input{display:flex;gap:8px;align-items:center;padding:10px;border-top:1px solid #F0F0F4}
+.rv-cb-input input{flex:1;border:1px solid #E9E9F0;border-radius:12px;padding:10px 12px;font:inherit;font-size:13px;outline:0}
+.rv-cb-input button{width:38px;height:38px;border-radius:50%;border:0;background:#1B1B22;color:#fff;font-size:16px;cursor:pointer;flex:0 0 auto}
+.rv-cb-typing{display:inline-flex;gap:4px}.rv-cb-typing i{width:6px;height:6px;border-radius:50%;background:#B5B2C4;display:inline-block;animation:rvcbDot 1.2s infinite}.rv-cb-typing i:nth-child(2){animation-delay:.18s}.rv-cb-typing i:nth-child(3){animation-delay:.36s}
+@keyframes rvcbDot{0%,80%,100%{transform:scale(.6);opacity:.4}40%{transform:scale(1);opacity:1}}
+</style>
+<div class="rv-cb" id="rvCb">
+  <div class="rv-cb-panel" id="rvCbPanel" hidden>
+    <div class="rv-cb-head" id="rvCbHead"><span class="rv-cb-orb sm"></span><div class="rv-cb-title">Ask me anything about RootVector</div><button class="rv-cb-x" onclick="rvCbToggle()" aria-label="Close">✕</button></div>
+    <div class="rv-cb-body" id="rvCbBody"></div>
+    <div class="rv-cb-input"><input id="rvCbMsg" placeholder="Ask me anything about RootVector" onkeydown="if(event.key==='Enter'){event.preventDefault();rvCbSend();}"><button onclick="rvCbSend()" aria-label="Send">↑</button></div>
+  </div>
+  <button class="rv-cb-fab" id="rvCbFab" aria-label="Ask AI about RootVector"><span class="rv-cb-orb"></span></button>
+</div>
+<script>
+(function(){
+  var API=(location.port==='4178'||location.protocol==='file:')?'http://localhost:4000/api':'/api';
+  /* auth-aware: if the visitor is logged in, send CTAs to the app instead of login */
+  fetch(API+'/me',{credentials:'include'}).then(function(r){ if(!r.ok) return;
+    document.querySelectorAll('a[href^="login.html"]').forEach(function(a){ var h=a.getAttribute('href').split('#')[1]; a.setAttribute('href','app.html'+(h?('#'+h):'')); });
+    var n=document.querySelector('.nav-login-btn'); if(n) n.textContent='Explore dashboard';
+  }).catch(function(){});
+
+  var FAQ=[
+    {k:['what is','about','rootvector','what does'],a:'RootVector is an AI production-incident investigation agent. It connects to your stack (GitHub, Sentry, Datadog, Grafana, Kubernetes, OpenTelemetry), detects incidents, investigates autonomously, and surfaces the root cause with evidence and a confidence score — then recommends a fix a human approves.'},
+    {k:['how','work'],a:'When something breaks, RootVector correlates deployments, PRs, errors and traces, generates competing hypotheses, gathers evidence, identifies the most likely root cause, and recommends a reversible fix. A human approves before anything runs, then recovery is verified.'},
+    {k:['incident','solve','fix','remediat','resolve'],a:'The AI investigates and recommends a reversible fix (e.g. a rollback). Nothing runs automatically — a person clicks Approve & Execute, then RootVector verifies the metrics are back to baseline and marks it resolved.'},
+    {k:['integration','connect','stack','github','sentry','datadog','grafana','slack','kubernetes'],a:'Connect GitHub, Sentry, Datadog, Grafana, Kubernetes or OpenTelemetry from the Integrations page — a firing alert opens a real incident. Slack can receive outbound notifications.'},
+    {k:['human','approval','safe','gate'],a:'Yes — human-in-the-loop is built in. The AI only recommends; a person must Approve & Execute before any remediation runs.'},
+    {k:['free','price','cost','get started','sign up','start','account'],a:'Click “Get started” to create an account (email, Google or GitHub). Connect a tool and RootVector begins investigating your real incidents.'}
+  ];
+  function localAns(q){ var t=q.toLowerCase().trim();
+    if(/^(hi+|hey+|hello+|yo|hola)\b/.test(t)) return 'Hi! 👋 Ask me anything about RootVector — what it is, how it works, or how to get started.';
+    if(/\b(thank|thanks|thx)\b/.test(t)) return "You're welcome! Anything else about RootVector?";
+    var best=null,sc=0; FAQ.forEach(function(f){var s=0;f.k.forEach(function(w){if(t.indexOf(w)>=0)s++;});if(s>sc){sc=s;best=f;}});
+    return best? best.a : "I can tell you what RootVector is, how it works, how incidents get solved, integrations, human approval, and how to get started. Ask away!";
+  }
+  var msgs=[];
+  function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  function fmt(s){return esc(s).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/\n/g,'<br>');}
+  function render(){ var b=document.getElementById('rvCbBody'); if(!b) return;
+    if(!msgs.length){ b.innerHTML='<div class="rv-cb-empty"><span class="rv-cb-orb"></span><div style="font-weight:700;color:#1A1630;font-size:14px">Ask me anything about RootVector</div><div style="font-size:12px;margin-top:4px">What it is, how it works, how to get started.</div></div>'; return; }
+    b.innerHTML=msgs.map(function(m){return '<div class="rv-cb-b '+m.role+'">'+m.text+'</div>';}).join(''); b.scrollTop=b.scrollHeight;
+  }
+  window.rvCbToggle=function(){ var p=document.getElementById('rvCbPanel'); if(!p) return; p.hidden=!p.hidden; if(!p.hidden){ render(); var i=document.getElementById('rvCbMsg'); if(i) setTimeout(function(){i.focus();},30); } };
+  window.rvCbSend=async function(){ var i=document.getElementById('rvCbMsg'); if(!i) return; var q=(i.value||'').trim(); if(!q) return; i.value='';
+    msgs.push({role:'me',text:esc(q)}); msgs.push({role:'ai',text:'<span class="rv-cb-typing"><i></i><i></i><i></i></span>'}); render();
+    var reply=null;
+    if(!/^(hi+|hey+|hello+|yo|hola|thank|thanks|thx)\b/i.test(q)){
+      try{ var r=await fetch(API+'/public/help',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:q})}); if(r.ok){ var d=await r.json(); if(d&&d.reply) reply=fmt(d.reply); } }catch(e){}
+    }
+    if(!reply) reply=fmt(localAns(q));
+    msgs[msgs.length-1]={role:'ai',text:reply}; render();
+  };
+  /* draggable */
+  var cb=document.getElementById('rvCb'),fab=document.getElementById('rvCbFab'),head=document.getElementById('rvCbHead');
+  var drag=false,moved=false,sx,sy,ox,oy;
+  function ds(e){ drag=true;moved=false; var t=e.touches?e.touches[0]:e; sx=t.clientX;sy=t.clientY; var r=cb.getBoundingClientRect(); ox=r.left;oy=r.top; }
+  function dm(e){ if(!drag)return; var t=e.touches?e.touches[0]:e; var dx=t.clientX-sx,dy=t.clientY-sy; if(Math.abs(dx)+Math.abs(dy)>4)moved=true; cb.style.left=Math.max(6,Math.min(window.innerWidth-70,ox+dx))+'px'; cb.style.top=Math.max(6,Math.min(window.innerHeight-70,oy+dy))+'px'; cb.style.right='auto';cb.style.bottom='auto'; }
+  function de(){ drag=false; }
+  fab.addEventListener('mousedown',ds); if(head)head.addEventListener('mousedown',ds);
+  document.addEventListener('mousemove',dm); document.addEventListener('mouseup',de);
+  fab.addEventListener('touchstart',ds,{passive:true}); if(head)head.addEventListener('touchstart',ds,{passive:true});
+  document.addEventListener('touchmove',dm,{passive:true}); document.addEventListener('touchend',de);
+  fab.addEventListener('click',function(){ if(moved){moved=false;return;} rvCbToggle(); });
+})();
+</script>
 </body>
 </html>

@@ -208,6 +208,9 @@ const GOOGLE_CLIENT_ID = "800195378496-ppr6iadthegssifqiigs8a00flgd39j0.apps.goo
 
 const $ = s => document.getElementById(s);
 
+/* already signed in (session cookie valid)? skip the form → dashboard */
+fetch(API_BASE + "/me", { credentials:"include" }).then(r => { if(r.ok) location.replace("app.html"); }).catch(()=>{});
+
 /* password visibility */
 $("eye").addEventListener("click", () => {
   const p = $("pass"), open = $("eyeOpen"), off = $("eyeOff");
