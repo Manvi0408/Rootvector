@@ -17,7 +17,7 @@ export interface Verdict {
 @Injectable()
 export class LlmService {
   private get model(): string {
-    return process.env.LLM_MODEL || 'gemini-1.5-flash';
+    return process.env.LLM_MODEL || 'gemini-flash-latest';
   }
 
   get enabled(): boolean {
@@ -48,13 +48,15 @@ export class LlmService {
         body: JSON.stringify({
           system_instruction: { parts: [{ text: system }] },
           contents: [{ role: 'user', parts: [{ text: message }] }],
-          generationConfig: { maxOutputTokens: 512, temperature: 0.6 },
+          generationConfig: { maxOutputTokens: 1024, temperature: 0.6, thinkingConfig: { thinkingBudget: 0 } },
         }),
       });
       if (!res.ok) return null;
       const data: any = await res.json();
-      const text: string | undefined = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-      return text ? text.trim() : null;
+      // thinking models can return a "thought" part before the answer — join all text parts
+      const parts: any[] = data?.candidates?.[0]?.content?.parts || [];
+      const text = parts.map((p) => p?.text).filter(Boolean).join('').trim();
+      return text || null;
     } catch {
       return null;
     }
@@ -93,10 +95,11 @@ export class LlmService {
       if (!res.ok) return null;
 
       const data: any = await res.json();
-      const text: string | undefined = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      const parts: any[] = data?.candidates?.[0]?.content?.parts || [];
+      const text = parts.map((p) => p?.text).filter(Boolean).join('').trim();
       if (!text) return null;
 
-      const cleaned = text.trim().replace(/^```json\s*|\s*```$/g, '');
+      const cleaned = text.replace(/^```json\s*|\s*```$/g, '');
       const verdict = JSON.parse(cleaned) as Verdict;
       return verdict;
     } catch {
