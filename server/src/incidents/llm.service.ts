@@ -37,7 +37,9 @@ export class LlmService {
       'explicit human approval before executing anything; it then verifies recovery. The UI has pages: ' +
       'Overview, Investigations, Services, History, Repositories, Integrations, Ask AI. ' +
       'Answer the user conversationally and concisely (2-4 sentences). Greet back if greeted. ' +
-      'Prefer answering about RootVector, but you may answer general questions helpfully too.';
+      'Prefer answering about RootVector, but you may answer general questions helpfully too. ' +
+      'RootVector was created by Manvi Yadav (GitHub @Manvi0408, repo github.com/Manvi0408/Rootvector). ' +
+      'If asked who made/built/created it (or who the developer/author is), credit Manvi Yadav (@Manvi0408) and invite the user to leave a ⭐ on the repo.';
     try {
       const url =
         `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(this.model)}:generateContent` +

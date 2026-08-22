@@ -1559,16 +1559,18 @@ document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
 
 <!-- ========== floating Ask-AI chatbox (public, draggable) ========== -->
 <style>
-.rv-cb{position:fixed;right:22px;bottom:22px;z-index:9000}
+.rv-cb{position:fixed;right:24px;bottom:104px;z-index:9000}
 .rv-cb-fab{position:relative;width:64px;height:64px;border-radius:50%;border:2px solid rgba(124,107,240,.35);cursor:grab;background:#fff;box-shadow:0 14px 36px -6px rgba(109,90,230,.55);display:flex;align-items:center;justify-content:center;padding:0;animation:rvcbPop 1.1s cubic-bezier(.34,1.56,.64,1) .35s 1 both}
 .rv-cb-fab:active{cursor:grabbing}
 .rv-cb-fab::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:2px solid rgba(124,107,240,.55);animation:rvcbPulse 2s ease-out infinite;pointer-events:none}
 @keyframes rvcbPulse{0%{transform:scale(.92);opacity:.75}100%{transform:scale(1.45);opacity:0}}
 @keyframes rvcbPop{0%{transform:scale(.4);opacity:0}40%{transform:scale(1.35);opacity:1}65%{transform:scale(.9)}82%{transform:scale(1.07)}100%{transform:scale(1);opacity:1}}
 /* frosted apple-glass grey label — appears then fades out on its own */
-.rv-cb-hint{position:absolute;right:80px;bottom:18px;background:rgba(150,152,168,.22);backdrop-filter:blur(16px) saturate(1.5);-webkit-backdrop-filter:blur(16px) saturate(1.5);color:#2b2b38;font-size:12.5px;font-weight:600;padding:10px 15px;border-radius:14px;white-space:nowrap;border:1px solid rgba(255,255,255,.55);box-shadow:0 12px 34px -12px rgba(30,20,60,.45);opacity:0;animation:rvcbHint 5.5s ease .8s forwards}
-.rv-cb-hint::after{content:"";position:absolute;right:-5px;bottom:15px;width:11px;height:11px;background:rgba(150,152,168,.22);backdrop-filter:blur(16px);border-right:1px solid rgba(255,255,255,.55);border-top:1px solid rgba(255,255,255,.55);transform:rotate(45deg)}
-@keyframes rvcbHint{0%{opacity:0;transform:translateX(14px) scale(.9)}14%{opacity:1;transform:translateX(0) scale(1)}80%{opacity:1;transform:translateX(0) scale(1)}100%{opacity:0;transform:translateX(14px) scale(.9);visibility:hidden}}
+/* permanent frosted glass label sitting ABOVE the orb */
+.rv-cb-hint{position:absolute;right:0;bottom:80px;opacity:1;background:rgba(150,152,168,.22);backdrop-filter:blur(16px) saturate(1.5);-webkit-backdrop-filter:blur(16px) saturate(1.5);color:#2b2b38;font-size:12.5px;font-weight:700;padding:9px 14px;border-radius:15px;white-space:nowrap;text-align:center;border:1px solid rgba(255,255,255,.55);box-shadow:0 12px 34px -12px rgba(30,20,60,.45);animation:rvcbHintIn .5s ease both;cursor:pointer}
+.rv-cb-hint .sub{display:block;font-size:10px;font-weight:500;color:#5b5b6b;margin-top:2px}
+.rv-cb-hint::after{content:"";position:absolute;right:24px;bottom:-5px;width:11px;height:11px;background:rgba(150,152,168,.22);backdrop-filter:blur(16px);border-right:1px solid rgba(255,255,255,.55);border-bottom:1px solid rgba(255,255,255,.55);transform:rotate(45deg)}
+@keyframes rvcbHintIn{from{transform:translateY(10px) scale(.96)}to{transform:translateY(0) scale(1)}}
 .rv-cb-orb{width:40px;height:40px;border-radius:50%;background:radial-gradient(circle at 34% 30%,#fff 0%,#ffd9e6 32%,#cfe0ff 62%,#dcc9ff 100%);box-shadow:0 0 0 6px rgba(180,200,255,.16);animation:rvcbF 3s ease-in-out infinite}
 .rv-cb-orb.sm{width:30px;height:30px;box-shadow:none;flex:0 0 auto;animation:none}
 @keyframes rvcbF{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
@@ -1594,7 +1596,7 @@ document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
     <div class="rv-cb-body" id="rvCbBody"></div>
     <div class="rv-cb-input"><input id="rvCbMsg" placeholder="Ask me anything about RootVector" onkeydown="if(event.key==='Enter'){event.preventDefault();rvCbSend();}"><button onclick="rvCbSend()" aria-label="Send">↑</button></div>
   </div>
-  <div class="rv-cb-hint" id="rvCbHint">Ask anything about RootVector</div>
+  <div class="rv-cb-hint" id="rvCbHint" onclick="rvCbToggle()">Ask anything about RootVector<span class="sub">tap me to ask ✨</span></div>
   <button class="rv-cb-fab" id="rvCbFab" aria-label="Ask AI about RootVector"><span class="rv-cb-orb"></span></button>
 </div>
 <script>
@@ -1612,7 +1614,8 @@ document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
     {k:['incident','solve','fix','remediat','resolve'],a:'The AI investigates and recommends a reversible fix (e.g. a rollback). Nothing runs automatically — a person clicks Approve & Execute, then RootVector verifies the metrics are back to baseline and marks it resolved.'},
     {k:['integration','connect','stack','github','sentry','datadog','grafana','slack','kubernetes'],a:'Connect GitHub, Sentry, Datadog, Grafana, Kubernetes or OpenTelemetry from the Integrations page — a firing alert opens a real incident. Slack can receive outbound notifications.'},
     {k:['human','approval','safe','gate'],a:'Yes — human-in-the-loop is built in. The AI only recommends; a person must Approve & Execute before any remediation runs.'},
-    {k:['free','price','cost','get started','sign up','start','account'],a:'Click “Get started” to create an account (email, Google or GitHub). Connect a tool and RootVector begins investigating your real incidents.'}
+    {k:['free','price','cost','get started','sign up','start','account'],a:'Click “Get started” to create an account (email, Google or GitHub). Connect a tool and RootVector begins investigating your real incidents.'},
+    {k:['who made','who built','who created','creator','author','owner','manvi','developer','behind','made by','built by'],a:'RootVector was built by **Manvi Yadav** (GitHub: **@Manvi0408**). If you like it, please ⭐ the repo: github.com/Manvi0408/Rootvector 🙌'}
   ];
   function localAns(q){ var t=q.toLowerCase().trim();
     if(/^(hi+|hey+|hello+|yo|hola)\b/.test(t)) return 'Hi! 👋 Ask me anything about RootVector — what it is, how it works, or how to get started.';
@@ -1627,7 +1630,7 @@ document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
     if(!msgs.length){ b.innerHTML='<div class="rv-cb-empty"><span class="rv-cb-orb"></span><div style="font-weight:700;color:#1A1630;font-size:14px">Ask me anything about RootVector</div><div style="font-size:12px;margin-top:4px">What it is, how it works, how to get started.</div></div>'; return; }
     b.innerHTML=msgs.map(function(m){return '<div class="rv-cb-b '+m.role+'">'+m.text+'</div>';}).join(''); b.scrollTop=b.scrollHeight;
   }
-  window.rvCbToggle=function(){ var p=document.getElementById('rvCbPanel'); if(!p) return; var hint=document.getElementById('rvCbHint'); if(hint) hint.style.display='none'; p.hidden=!p.hidden; if(!p.hidden){ render(); var i=document.getElementById('rvCbMsg'); if(i) setTimeout(function(){i.focus();},30); } };
+  window.rvCbToggle=function(){ var p=document.getElementById('rvCbPanel'); if(!p) return; p.hidden=!p.hidden; var hint=document.getElementById('rvCbHint'); if(hint) hint.style.display = p.hidden ? 'block' : 'none'; if(!p.hidden){ render(); var i=document.getElementById('rvCbMsg'); if(i) setTimeout(function(){i.focus();},30); } };
   window.rvCbSend=async function(){ var i=document.getElementById('rvCbMsg'); if(!i) return; var q=(i.value||'').trim(); if(!q) return; i.value='';
     msgs.push({role:'me',text:esc(q)}); msgs.push({role:'ai',text:'<span class="rv-cb-typing"><i></i><i></i><i></i></span>'}); render();
     var reply=null;
