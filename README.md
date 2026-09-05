@@ -16,6 +16,7 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/Manvi0408/Rootvector/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/Manvi0408/Rootvector/actions/workflows/ci.yml/badge.svg"></a>
   <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white">
   <img alt="NestJS" src="https://img.shields.io/badge/NestJS-E0234E?logo=nestjs&logoColor=white">
   <img alt="Prisma" src="https://img.shields.io/badge/Prisma-2D3748?logo=prisma&logoColor=white">
@@ -210,6 +211,22 @@ python -m http.server 4178
 ```
 
 Open **http://localhost:4178/login.html**, sign in, and you're on the dashboard.
+
+---
+
+## Tests
+
+Unit tests run with Jest (`ts-jest`) and cover the two most safety-critical pieces of logic, with no database or network required:
+
+```bash
+cd server
+npm test
+```
+
+- **`crypto.service.spec.ts`** — AES-256-GCM token encryption: round-trip, unicode, per-call random IV, `iv:tag:data` format, GCM tamper detection, and key-length validation.
+- **`agent.service.spec.ts`** — the deterministic, evidence-grounded investigation fallback: it must correlate the error spike with the most recent deployment, rank that as the top hypothesis, recommend rolling it back, cite the merged PR as evidence, attribute the failure to the incident's own service, and degrade gracefully when no deployment is found.
+
+Every push and pull request runs `npm ci → prisma generate → build → test` in [GitHub Actions](.github/workflows/ci.yml).
 
 ---
 
