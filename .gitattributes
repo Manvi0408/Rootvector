@@ -1,0 +1,6 @@
+# Language stats: the substance of this project is the TypeScript / NestJS +
+# Prisma backend under server/. The single-file HTML pages and the design
+# assets are presentation-layer (heavy inline CSS/JS), so keep them out of the
+# language bar so it reflects the actual engineering.
+*.html linguist-vendored
+assets/** linguist-vendored
