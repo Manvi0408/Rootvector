@@ -64,6 +64,34 @@ export class LlmService {
     }
   }
 
+  /** Low-level single-turn completion with a caller-supplied system prompt.
+   *  Powers the agent investigation loop (one decision per call). Returns the
+   *  model's text, or null if disabled/failed. */
+  async raw(system: string, user: string): Promise<string | null> {
+    if (!this.enabled) return null;
+    try {
+      const url =
+        `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(this.model)}:generateContent` +
+        `?key=${encodeURIComponent(process.env.GEMINI_API_KEY as string)}`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: system }] },
+          contents: [{ role: 'user', parts: [{ text: user }] }],
+          generationConfig: { maxOutputTokens: 1024, temperature: 0.2, thinkingConfig: { thinkingBudget: 0 } },
+        }),
+      });
+      if (!res.ok) return null;
+      const data: any = await res.json();
+      const parts: any[] = data?.candidates?.[0]?.content?.parts || [];
+      const text = parts.map((p) => p?.text).filter(Boolean).join('').trim();
+      return text || null;
+    } catch {
+      return null;
+    }
+  }
+
   /** Analyze real incident evidence; returns a grounded verdict, or null if disabled/failed. */
   async analyze(input: { service: string; evidence: string[] }): Promise<Verdict | null> {
     if (!this.enabled) return null;
