@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { IncidentsService } from './incidents.service';
 import { LlmService, Verdict } from './llm.service';
 import { InvestigationTools, sanitizeUntrusted } from './investigation.tools';
+import { AiRuntimeGuard, GuardFinding } from './ai-runtime-guard';
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -35,6 +36,9 @@ const AGENT_SYSTEM =
 
 @Injectable()
 export class AgentService {
+  // AI runtime-security gateway: every model call passes through it.
+  private readonly guard = new AiRuntimeGuard();
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly incidents: IncidentsService,
@@ -78,13 +82,28 @@ export class AgentService {
   private async agenticLoop(incidentId: string, inc: any, tools: InvestigationTools): Promise<Verdict | null> {
     let observations = '';
     for (let step = 1; step <= MAX_STEPS; step++) {
-      const user =
+      const built =
         `Incident: "${sanitizeUntrusted(inc.title).text}" on service "${sanitizeUntrusted(inc.service).text}". ` +
         `Error rate: ${inc.errorRate ?? 'unknown'}.\n\n` +
         `Observations so far:\n${observations || '(none yet)'}\n\n` +
         'Choose the next action. Respond with ONLY one JSON object.';
 
-      const raw = await this.llm.raw(AGENT_SYSTEM, user);
+      // PROMPT firewall: DLP + injection scan before anything leaves for the model.
+      const gin = this.guard.inspectPrompt(built);
+      for (const f of gin.findings) await this.logFinding(incidentId, f);
+
+      const raw = await this.llm.raw(AGENT_SYSTEM, gin.text);
+
+      // RESPONSE firewall: block secret echo / exfiltration channels in the output.
+      if (raw) {
+        const gout = this.guard.inspectResponse(raw);
+        for (const f of gout.findings) await this.logFinding(incidentId, f);
+        if (!gout.allowed) {
+          await this.incidents.event(incidentId, 'security', 'Model response blocked by the AI runtime guard — concluding safely with prior evidence');
+          return null; // fall back to a deterministic conclusion
+        }
+      }
+
       const parsed = this.safeJson(raw);
       if (!parsed) return null; // malformed → fall back to deterministic conclusion
 
@@ -94,10 +113,11 @@ export class AgentService {
       }
 
       const name = String(parsed.tool || '');
-      // GUARDRAIL: only whitelisted read-only tools may run. Anything else is denied and logged.
-      if (!InvestigationTools.ALLOWED.includes(name)) {
-        observations += `\n- denied out-of-scope tool "${name}" (guardrail)`;
-        await this.incidents.event(incidentId, 'security', `Blocked an out-of-scope tool request: ${name || '(empty)'}`);
+      // AGENT firewall: runtime enforcement of the read-only tool allowlist.
+      const authz = this.guard.authorizeTool(name, InvestigationTools.ALLOWED);
+      if (authz) {
+        await this.logFinding(incidentId, authz);
+        observations += `\n- denied out-of-scope tool "${name}" (runtime guard)`;
         continue;
       }
 
@@ -206,6 +226,16 @@ export class AgentService {
 
   private pretty(name: string): string {
     return name.replace(/^get_/, '').replace(/_/g, ' ');
+  }
+
+  /** Emit a structured AI-runtime-security event (telemetry the console can show). */
+  private async logFinding(incidentId: string, f: GuardFinding) {
+    await this.incidents.event(
+      incidentId,
+      'security',
+      `[${f.severity}] ${f.category}: ${f.detail}`,
+      { category: f.category, action: f.action, severity: f.severity },
+    );
   }
 
   /** Deterministic, evidence-grounded fallback verdict. */
