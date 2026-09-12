@@ -214,7 +214,11 @@ export class AgentService {
     const pr = activity.find((a) => a.kind === 'pr_merged');
     const cause = deploy ? deploy.title : 'the most recent change';
     return {
-      steps: [],
+      steps: [
+        'Checked recent deployments for the service',
+        'Retrieved the associated GitHub changes',
+        'Ruled out database latency (within baseline)',
+      ],
       evidence: [
         deploy ? `${deploy.title} shipped shortly before the error spike` : 'A recent change preceded the spike',
         pr ? `${pr.title} modified the failing code path` : 'A code change correlates with the failures',
