@@ -82,6 +82,12 @@ export class IncidentsController {
     return this.incidents.get(key, u.userId);
   }
 
+  /** Verify the tamper-evident audit chain for an incident. */
+  @Get('incidents/:key/audit')
+  verifyAudit(@Param('key') key: string, @CurrentUser() u: AuthedUser) {
+    return this.incidents.verifyAudit(key, u.userId);
+  }
+
   /** Live investigation stream (Server-Sent Events) — pushes new events as the agent works. */
   @Sse('incidents/:key/stream')
   stream(@Param('key') key: string, @CurrentUser() u: AuthedUser): Observable<MessageEvent> {

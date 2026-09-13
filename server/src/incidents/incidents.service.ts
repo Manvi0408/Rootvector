@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { postSlack } from '../common/notify';
 import { IntegrationsService } from '../integrations/integrations.service';
+import { chainHash, verifyChain, GENESIS } from './audit-hash';
 
 @Injectable()
 export class IncidentsService {
@@ -20,9 +21,34 @@ export class IncidentsService {
   }
 
   async event(incidentId: string, kind: string, message: string, data?: any) {
-    return this.prisma.incidentEvent.create({
-      data: { incidentId, kind, message, data: data ?? undefined },
+    // Link this event into the tamper-evident hash chain for the incident.
+    const last = await this.prisma.incidentEvent.findFirst({
+      where: { incidentId }, orderBy: { at: 'desc' },
     });
+    const prevHash = last?.hash || GENESIS;
+    const at = new Date();
+    const hash = chainHash(prevHash, { incidentId, kind, message, data: data ?? null, at });
+    return this.prisma.incidentEvent.create({
+      data: { incidentId, kind, message, data: data ?? undefined, at, prevHash, hash },
+    });
+  }
+
+  /** Verify the tamper-evident audit chain for an incident. Recomputes every
+   *  event hash; reports whether the chain is intact and where it first breaks. */
+  async verifyAudit(key: string, userId?: string) {
+    const inc = await this.prisma.incident.findUnique({
+      where: { key },
+      include: { events: { orderBy: { at: 'asc' } } },
+    });
+    if (!inc) throw new NotFoundException('Incident not found');
+    if (userId && inc.userId && inc.userId !== userId) throw new NotFoundException('Incident not found');
+    const result = verifyChain(inc.events as any);
+    return {
+      key: inc.key,
+      events: inc.events.length,
+      intact: result.intact,
+      brokenAt: result.brokenAt >= 0 ? inc.events[result.brokenAt]?.id : null,
+    };
   }
 
   /** Create a real incident and record the first investigation events. */

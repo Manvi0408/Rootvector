@@ -74,9 +74,11 @@ model Incident {
 model IncidentEvent {
   id         String   @id @default(cuid())
   incidentId String
-  kind       String   // detected | investigation.step | evidence | hypothesis | root_cause | recommendation | approval.required | remediation | verification | resolved
+  kind       String   // detected | investigation.step | evidence | hypothesis | root_cause | recommendation | approval.required | remediation | verification | resolved | security
   message    String
   data       Json?
+  prevHash   String?  // tamper-evident audit chain: hash this event was linked from
+  hash       String?  // SHA-256(prevHash + canonical(event))
   at         DateTime @default(now())
   incident   Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
 }

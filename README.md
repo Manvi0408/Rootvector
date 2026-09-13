@@ -299,7 +299,7 @@ rootvector/
 - [x] Real incident detection via signature-verified GitHub webhooks (verified in production)
 - [x] Per-user, multi-tenant incident isolation
 - [x] Close the real GitHub issue on approval ("RootVector solved this")
-- [ ] Tamper-evident (hash-chained) audit trail
+- [x] Tamper-evident (hash-chained) audit trail — every event SHA-256-linked; `GET /api/incidents/:key/audit` verifies it
 - [ ] First-class Datadog / Grafana / Kubernetes / OpenTelemetry connect UIs
 - [ ] Slack two-way approvals (approve a fix from Slack)
 

@@ -133,10 +133,21 @@ SECURITY              Possible prompt-injection found in evidence — neutralize
 The injected instructions were never obeyed, the key never reached the model or
 leaked, and no action ran without human approval.
 
+## Tamper-evident audit trail (T7 — audit integrity)
+
+Every incident event is hash-chained: `hash = SHA-256(prevHash + canonical(event))`,
+anchored at a genesis marker
+([audit-hash.ts](rootvector/server/src/incidents/audit-hash.ts)). Editing,
+reordering, inserting or deleting any event changes its hash and breaks every
+later link, so tampering is detectable by recomputing the chain — `GET
+/api/incidents/:key/audit` returns `{ intact, brokenAt }`. Covered by unit tests
+that assert edits, reorders, deletes and forged inserts are all caught.
+
 ## Residual risks / next steps
 
 - Injection detection is heuristic (pattern-based); the architectural controls
   (read-only tools + human gate) are the real guarantee, not the regex.
 - Add rate-limiting per source on webhook ingestion.
-- Add per-tool audit signing so the audit trail is tamper-evident.
+- The audit chain is verifiable but not yet externally anchored (e.g. periodic
+  notarization) — a determined DB admin could recompute the whole chain.
 - Sandbox the LLM egress (allowlist the model endpoint only).
