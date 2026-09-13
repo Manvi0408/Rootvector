@@ -542,7 +542,7 @@ async function loadOverview(){
   const setD=(id,pct,goodDown)=>{const el=$(id); if(el) el.innerHTML=ovDeltaHtml(pct,goodDown);};
   const setS=(id,ts,idx,c)=>{const el=$(id); if(el) el.innerHTML=sparkFor(ts,idx,c);};
   setD('dActive',delta7(tsInc),true);          setS('sActive',tsInc,0,'#DC2626');
-  setD('dServices',distinctDelta7(all),false); setS('sServices',tsInc,1,'#6B7280');
+  setD('dServices',distinctDelta7(all),false); {const el=$('sServices'); if(el) el.innerHTML=svcSparkFor(all,'#6B7280');}
   setD('dAlerts',delta7(tsAlerts),true);       setS('sAlerts',tsAlerts,2,'#D97706');
   setD('dResolved',delta7(tsResolved),false);  setS('sResolved',tsResolved,3,'#16A34A');
   setD('dDeploys',delta7(tsDeploy),false);     setS('sDeploys',tsDeploy,4,'#2563EB');
@@ -621,38 +621,57 @@ function ovSpark(vals,color){
   return `<svg class="ov-spark" viewBox="0 0 ${w} ${h}"><path d="${d}" fill="none" stroke="${color}" stroke-width="1.6"/></svg>`;
 }
 /* 7-day-vs-previous-7-day % change from a list of timestamps (real trend). */
-function delta7(ts){ const now=Date.now(),d=864e5*7; let cur=0,prev=0; (ts||[]).forEach(x=>{const t=new Date(x).getTime(); if(t>now-d)cur++; else if(t>now-2*d)prev++;}); return prev===0?(cur>0?100:0):Math.round((cur-prev)/prev*100); }
-function distinctDelta7(incidents){ const now=Date.now(),d=864e5*7,a=new Set(),b=new Set(); (incidents||[]).forEach(i=>{const t=new Date(i.startedAt).getTime(); if(t>now-d)a.add(i.service); else if(t>now-2*d)b.add(i.service);}); return b.size===0?(a.size>0?100:0):Math.round((a.size-b.size)/b.size*100); }
+function delta7(ts){ const now=Date.now(),d=864e5*7; let cur=0,prev=0; (ts||[]).forEach(x=>{const t=new Date(x).getTime(); if(t>now-d)cur++; else if(t>now-2*d)prev++;}); return prev===0?(cur>0?null:0):Math.round((cur-prev)/prev*100); }
+function distinctDelta7(incidents){ const now=Date.now(),d=864e5*7,a=new Set(),b=new Set(); (incidents||[]).forEach(i=>{const t=new Date(i.startedAt).getTime(); if(t>now-d)a.add(i.service); else if(t>now-2*d)b.add(i.service);}); return b.size===0?(a.size>0?null:0):Math.round((a.size-b.size)/b.size*100); }
 /* daily counts over the last 7 days → sparkline */
 function spark7(ts,color){ const now=Date.now(),bk=new Array(7).fill(0); (ts||[]).forEach(x=>{const days=Math.floor((now-new Date(x).getTime())/864e5); if(days>=0&&days<7)bk[6-days]++;}); return ovSpark(bk,color); }
 /* KPI sparkline = the REAL last-7-days daily counts. No data → a clean flat line. */
 function ovSparkFlat(color){ const w=64,h=20; return `<svg class="ov-spark" viewBox="0 0 ${w} ${h}"><path d="M0 ${h/2} L${w} ${h/2}" fill="none" stroke="${color}" stroke-width="1.6" opacity=".4"/></svg>`; }
+/* Render a 7-bucket series, but only as a real trend line when there are ≥2
+   days with data. A single day of activity (e.g. fresh/demo data) can't form a
+   trend, so we show a clean flat baseline instead of a misleading lone spike. */
+function sparkOr(bk,color){ return bk.filter(x=>x>0).length<2 ? ovSparkFlat(color) : ovSpark(bk,color); }
 function sparkFor(ts,idx,color){
   const now=Date.now(),bk=new Array(7).fill(0);
   (ts||[]).forEach(x=>{const days=Math.floor((now-new Date(x).getTime())/864e5); if(days>=0&&days<7)bk[6-days]++;});
-  if(bk.reduce((a,b)=>a+b,0)===0) return ovSparkFlat(color);  // nothing happened → flat line
-  return ovSpark(bk, color);
+  return sparkOr(bk,color);
 }
-function ovDeltaHtml(pct,goodWhenDown){ const good = pct===0?null:(goodWhenDown? pct<0 : pct>0); const color = pct===0?'#9AA1AD':(good?'#16A34A':'#DC2626'); const arrow=pct>0?'↑':pct<0?'↓':''; return `<span style="color:${color};font-weight:700">${arrow}${Math.abs(pct)}%</span> <span style="color:#9AA1AD">vs last 7 days</span>`; }
+/* Services sparkline = distinct services with activity per day (its own real
+   series — not a copy of the incident count). */
+function svcSparkFor(incidents,color){
+  const now=Date.now(), days=[...Array(7)].map(()=>new Set());
+  (incidents||[]).forEach(i=>{ const d=Math.floor((now-new Date(i.startedAt).getTime())/864e5); if(d>=0&&d<7&&i.service) days[6-d].add(i.service); });
+  return sparkOr(days.map(s=>s.size),color);
+}
+function ovDeltaHtml(pct,goodWhenDown){ if(pct===null) return '<span style="color:#9AA1AD;font-weight:600">New · building 7-day baseline</span>'; const good = pct===0?null:(goodWhenDown? pct<0 : pct>0); const color = pct===0?'#9AA1AD':(good?'#16A34A':'#DC2626'); const arrow=pct>0?'↑':pct<0?'↓':''; return `<span style="color:${color};font-weight:700">${arrow}${Math.abs(pct)}%</span> <span style="color:#9AA1AD">vs last 7 days</span>`; }
+/* Production Health — REAL error rate over the last 24h, bucketed from actual
+   incidents (each incident's own errorRate at its own startedAt). No synthetic
+   baseline: calm periods read a true 0%, spikes are real incident error rates. */
 function ovChart(incidents){
-  const now=Date.now(), start=now-24*3600*1000, w=560, h=170, base=0.3;
-  const pts=(incidents||[]).filter(i=>i.errorRate && new Date(i.startedAt).getTime()>=start).map(i=>({t:new Date(i.startedAt).getTime(),v:i.errorRate,key:i.key}));
-  const N=80, xs=[];
-  for(let k=0;k<N;k++){ const t=start+(k/(N-1))*(now-start); let val=base; pts.forEach(p=>{ const dt=(t-p.t)/(3600*1000); val+=p.v*Math.exp(-(dt*dt)/(2*0.6*0.6)); }); xs.push(val); }
-  const max=Math.max(4, Math.max.apply(null,xs))*1.08, X=i=>i/(N-1)*w, Y=v=>h-6-(v/max)*(h-16);
-  let area='M0 '+(h-6); xs.forEach((v,i)=>area+=' L'+X(i).toFixed(1)+' '+Y(v).toFixed(1)); area+=' L'+w+' '+(h-6)+' Z';
-  let line='M0 '+Y(xs[0]).toFixed(1); xs.forEach((v,i)=>line+=' L'+X(i).toFixed(1)+' '+Y(v).toFixed(1));
+  const now=Date.now(), start=now-24*3600*1000, w=560, h=170;
+  const N=48, bw=(now-start)/N;                 // 30-minute buckets
+  const buckets=new Array(N).fill(0);
+  const pts=(incidents||[]).filter(i=>i.errorRate && new Date(i.startedAt).getTime()>=start)
+    .map(i=>({t:new Date(i.startedAt).getTime(),v:i.errorRate,key:i.key}));
+  pts.forEach(p=>{ const k=Math.min(N-1,Math.max(0,Math.floor((p.t-start)/bw))); buckets[k]=Math.max(buckets[k],p.v); });
+  const hasData=buckets.some(v=>v>0);
+  const max=Math.max(4, Math.max.apply(null,buckets))*1.1, X=i=>i/(N-1)*w, Y=v=>h-6-(v/max)*(h-16);
+  let area='M0 '+(h-6); buckets.forEach((v,i)=>area+=' L'+X(i).toFixed(1)+' '+Y(v).toFixed(1)); area+=' L'+w+' '+(h-6)+' Z';
+  let line='M0 '+Y(buckets[0]).toFixed(1); buckets.forEach((v,i)=>line+=' L'+X(i).toFixed(1)+' '+Y(v).toFixed(1));
+  // current = real error rate in the most recent hour (0 once recovered)
+  const current=Math.max(0, ...buckets.slice(-2));
+  const healthy=current<1;
   const latest=pts.slice().sort((a,b)=>b.t-a.t)[0];
-  const current = xs[xs.length-1];
   let marker='';
-  let cap=`<div style="font-size:30px;font-weight:800;color:#12141C;margin:0 0 12px">${current.toFixed(2)}% <span style="font-size:13px;font-weight:500;color:var(--muted)">Error rate</span></div>`;
-  if(latest){ const mx=(latest.t-start)/(now-start)*w; marker=`<line x1="${mx.toFixed(1)}" y1="0" x2="${mx.toFixed(1)}" y2="${h-6}" stroke="#DC2626" stroke-width="1.4" stroke-dasharray="5 4"/>`;
-    cap=`<div style="font-size:12px;color:#DC2626;font-weight:700;margin-bottom:4px">⚠ Latest incident · ${latest.key}</div>`+cap; }
+  if(latest){ const mx=(latest.t-start)/(now-start)*w; marker=`<line x1="${mx.toFixed(1)}" y1="0" x2="${mx.toFixed(1)}" y2="${h-6}" stroke="#DC2626" stroke-width="1.2" stroke-dasharray="5 4"/>`; }
+  let cap=`<div style="font-size:30px;font-weight:800;color:${healthy?'#1F9D57':'#DC2626'};margin:0 0 3px">${current.toFixed(2)}% <span style="font-size:13px;font-weight:500;color:var(--muted)">Error rate now</span></div>
+    <div style="font-size:11.5px;font-weight:700;color:${healthy?'#1F9D57':'#DC2626'};margin-bottom:10px">● ${healthy?'Healthy — within baseline':'Elevated error rate'}</div>`;
+  const note = hasData ? '' : `<div class="muted" style="font-size:11.5px;padding:6px 2px 0">No error-rate signal in the last 24h — real rates plot here from Sentry/Datadog incidents or a simulation.</div>`;
   const yl=[max,max*0.75,max*0.5,max*0.25,0].map(v=>v.toFixed(1));
   const t0=new Date(start).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',hour12:false});
   return `${cap}<div style="display:flex;gap:8px"><div style="display:flex;flex-direction:column;justify-content:space-between;font-size:10px;color:#9A96A8;padding:2px 0 20px">${yl.map(v=>`<span>${v}%</span>`).join('')}</div>
     <div style="flex:1;min-width:0"><svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" style="width:100%;height:190px;display:block"><defs><linearGradient id="ovg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9AA1AD" stop-opacity=".35"/><stop offset="1" stop-color="#9AA1AD" stop-opacity="0"/></linearGradient></defs><path d="${area}" fill="url(#ovg)"/><path d="${line}" fill="none" stroke="#2A2E39" stroke-width="2"/>${marker}</svg>
-    <div style="display:flex;justify-content:space-between;font-size:10px;color:#9A96A8;margin-top:4px"><span>${t0}</span><span>Now</span></div></div></div>`;
+    <div style="display:flex;justify-content:space-between;font-size:10px;color:#9A96A8;margin-top:4px"><span>${t0}</span><span>Now</span></div></div></div>${note}`;
 }
 async function simulateIncident(btn){
   if(btn){ btn.disabled=true; btn.textContent='Simulating…'; }
