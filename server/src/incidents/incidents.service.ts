@@ -11,6 +11,20 @@ export class IncidentsService {
     private readonly integrations: IntegrationsService,
   ) {}
 
+  /** Owner to attribute an incident to when no specific user is known (e.g.
+   *  Sentry/Datadog webhooks carry no user). Uses DEFAULT_OWNER_EMAIL if set,
+   *  else the first-registered user — so webhook incidents still surface in a
+   *  dashboard instead of being orphaned. */
+  private async defaultOwnerId(): Promise<string | null> {
+    const email = process.env.DEFAULT_OWNER_EMAIL;
+    if (email) {
+      const u = await this.prisma.user.findUnique({ where: { email } });
+      if (u) return u.id;
+    }
+    const first = await this.prisma.user.findFirst({ orderBy: { createdAt: 'asc' } });
+    return first?.id ?? null;
+  }
+
   private async newKey(): Promise<string> {
     for (let i = 0; i < 20; i++) {
       const key = `INC-${Math.floor(1000 + Math.random() * 9000)}`;
@@ -64,10 +78,13 @@ export class IncidentsService {
     issueNumber?: number | null;
   }) {
     const key = await this.newKey();
+    // Attribute to the given user, or fall back to a default owner so
+    // webhook-sourced incidents (Sentry/Datadog/etc.) still show in a dashboard.
+    const ownerId = input.userId ?? (await this.defaultOwnerId());
     const inc = await this.prisma.incident.create({
       data: {
         key,
-        userId: input.userId ?? null,
+        userId: ownerId,
         title: input.title,
         service: input.service,
         severity: input.severity ?? 1,

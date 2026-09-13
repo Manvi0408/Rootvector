@@ -389,6 +389,7 @@ function pageOverview(){
   </div>
 
   <div id="ovMain">
+  <div id="ovSources"></div>
   <div class="ov-kpis">
     <div class="ov-kpi"><span class="ov-tile red">${svg(ICN.shield)}</span><span class="ov-kspark" id="sActive"></span><div class="v" id="kActive">—</div><div class="l">Active incidents</div><div class="ov-delta" id="dActive"></div></div>
     <div class="ov-kpi"><span class="ov-tile violet">${svg(ICN.cube)}</span><span class="ov-kspark" id="sServices"></span><div class="v" id="kServices">—</div><div class="l">Services monitored</div><div class="ov-delta" id="dServices"></div></div>
@@ -508,6 +509,33 @@ function connectGate(kind){
   const msg={investigations:'Connect a tool and RootVector will investigate your real incidents here.',services:"Connect a tool to start tracking your services' health here.",history:'Your solved and cancelled incidents will appear here once you connect a tool.'};
   return `<div class="health"><div class="empty" style="padding:44px 6px"><div class="orb">${svg(ICN.cube)}</div><h4>Connect your stack first</h4><p>${msg[kind]||'Connect a tool from Integrations to begin.'}</p><a class="btn-approve" href="#/integrations" style="display:inline-block">Go to Integrations →</a></div></div>`;
 }
+/* Source identity for a signal (used for badges + the sources strip). */
+const RV_SOURCES={
+  github:{l:'GitHub',c:'#24292F',b:'#EEF1F4'},
+  sentry:{l:'Sentry',c:'#7C3AED',b:'#F1ECFB'},
+  datadog:{l:'Datadog',c:'#DB2777',b:'#FBEAF2'},
+  grafana:{l:'Grafana',c:'#D97706',b:'#FEF3E2'},
+  kubernetes:{l:'Kubernetes',c:'#2563EB',b:'#E7F0FE'},
+  opentelemetry:{l:'OpenTelemetry',c:'#0EA5E9',b:'#E6F4FB'},
+  slack:{l:'Slack',c:'#B45309',b:'#FCEFD9'},
+  demo:{l:'Demo',c:'#6E6A62',b:'#F0EFEA'},
+  manual:{l:'Manual',c:'#6E6A62',b:'#F0EFEA'},
+};
+function rvSrcMeta(s){ return RV_SOURCES[(s||'').toLowerCase()]||{l:(s||'system'),c:'#6E6A62',b:'#F0EFEA'}; }
+function rvSrcLabel(s){ return s==='all'?'All sources':rvSrcMeta(s).l; }
+function rvSrc(s){ const x=rvSrcMeta(s); return `<span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:${x.c};background:${x.b};padding:2px 8px;border-radius:999px"><span style="width:6px;height:6px;border-radius:50%;background:${x.c}"></span>${x.l}</span>`; }
+/* "Signal sources" strip — shows every incident-capable integration + status. */
+async function loadSourcesStrip(githubConnected){
+  const el=$('ovSources'); if(!el) return;
+  let rows=[]; try{ rows=await (await rvApi('/integrations')).json(); }catch(e){}
+  const byKey=Object.fromEntries((rows||[]).map(r=>[r.key,r]));
+  const order=['github','sentry','datadog','grafana','kubernetes','opentelemetry','slack'];
+  el.innerHTML=`<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:2px 0 18px">
+    <span style="font-size:12px;font-weight:700;color:var(--muted);margin-right:2px">Signal sources</span>
+    ${order.map(k=>{const r=byKey[k]||{}; const connected=(k==='github')?(githubConnected||r.status==='connected'):(r.status==='connected'); const ready=r.ready; const dot=connected?'#1F9D57':(ready?'#D97706':'#C4C2CC'); const label=connected?'connected':(ready?'ready':'off'); const m=rvSrcMeta(k);
+      return `<span title="${label}" style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:${m.c};background:${m.b};padding:5px 10px;border-radius:999px"><span style="width:7px;height:7px;border-radius:50%;background:${dot}"></span>${m.l}</span>`;}).join('')}
+  </div>`;
+}
 async function loadOverview(){
   let d, all;
   try{ [d, all] = await Promise.all([ (await rvApi('/overview')).json(), (await rvApi('/incidents')).json() ]); }catch(e){ return; }
@@ -551,6 +579,8 @@ async function loadOverview(){
   if(stt){ if(active.length){ stt.style.color='#DC2626'; stt.innerHTML=`<span class="dot" style="background:#DC2626"></span> ${active.length} active incident${active.length>1?'s':''}`; }
     else { stt.style.color='#1F9D57'; stt.innerHTML='<span class="dot" style="background:#1F9D57"></span> All systems operational'; } }
 
+  // Signal sources strip (multi-tool status at a glance)
+  loadSourcesStrip(d.githubConnected);
   // Production Health chart (real error rates over 24h)
   const hv=$('ovHealth'); if(hv) hv.innerHTML=ovChart(all);
 
@@ -559,7 +589,7 @@ async function loadOverview(){
   if(ai){ ai.innerHTML = active.length ? active.slice(0,6).map(i=>{
       const pill = i.confidence ? 'Awaiting approval' : 'Investigating';
       return `<div class="ov-inc" style="cursor:pointer" onclick="location.hash='#/investigations/${i.key}'"><span class="sev s${i.severity||1}">SEV-${i.severity||1}</span>
-        <div class="m" style="flex:1;min-width:0"><div class="tt">${i.title} ${i.isDemo?'<span class="tag">DEMO</span>':''}</div><div class="sub">${i.service||''}</div></div>
+        <div class="m" style="flex:1;min-width:0"><div class="tt">${i.title} ${i.isDemo?'<span class="tag">DEMO</span>':''}</div><div class="sub" style="display:flex;align-items:center;gap:7px">${rvSrc(i.source)}<span>${i.service||''}</span></div></div>
         <div style="text-align:right;flex:0 0 auto"><div class="time">${timeAgo(i.startedAt)}</div><span class="ov-pill" style="color:#5B49D6">${pill}</span></div></div>`;
     }).join('') : `<div class="empty" style="padding:24px 6px"><div class="orb">${svg(ICN.check)}</div><h4>No active incidents</h4><p>All clear across your connected stacks.</p></div>`; }
 
@@ -1356,19 +1386,35 @@ function pageInvestigationsList(){
   </div>
   <div id="invList"><div class="muted">Loading…</div></div>`;
 }
+let invAllList=[];
 async function loadInvestigationsList(){
   const el=$('invList'); if(!el) return;
   if(!(await rvConnected())){ el.innerHTML=connectGate('investigations'); const st=$('invListStatus'); if(st) st.textContent='Connect a tool to begin'; const b=$('invNowBtn'); if(b) b.style.display='none'; return; }
   const b=$('invNowBtn'); if(b) b.style.display='';
   let list; try{ list=await (await rvApi('/incidents')).json(); }catch(e){ el.innerHTML='<div class="muted">Could not load.</div>'; return; }
+  invAllList=list;
   const st=$('invListStatus'); if(st) st.textContent = list.length ? (list.length+' incident'+(list.length>1?'s':'')) : 'No investigations yet';
   if(!list.length){ el.innerHTML=`<div class="health"><div class="empty" style="padding:40px 6px"><div class="orb">${svg(ICN.search)}</div><h4>No investigations yet</h4><p>When RootVector detects an incident it investigates automatically. Try “⚡ Simulate incident” on the Overview.</p><a class="btn-outline" href="#/overview">Back to overview</a></div></div>`; return; }
-  el.innerHTML=`<div class="health"><table class="tbl">
-    <thead><tr><th>Incident</th><th>Service</th><th>Status</th><th>Root cause</th><th>Confidence</th></tr></thead>
-    <tbody>${list.map(i=>`<tr style="cursor:pointer" onclick="location.hash='#/investigations/${i.key}'">
+  // Source filter — investigations from every incident-capable tool (default: all).
+  const srcs=['all','github','sentry','datadog','grafana','kubernetes','opentelemetry'];
+  const opts=srcs.map(s=>`<option value="${s}">${rvSrcLabel(s)}</option>`).join('');
+  el.innerHTML=`<div class="health">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+      <label style="font-size:13px;color:var(--muted);font-weight:600">Source</label>
+      <select id="invSrcFilter" onchange="renderInvRows(this.value)" style="padding:8px 12px;border:1px solid var(--line);border-radius:10px;font-size:13px;background:#fff;color:var(--ink);cursor:pointer">${opts}</select>
+    </div>
+    <table class="tbl">
+    <thead><tr><th>Incident</th><th>Source</th><th>Service</th><th>Status</th><th>Root cause</th><th>Confidence</th></tr></thead>
+    <tbody id="invRows"></tbody></table></div>`;
+  renderInvRows('all');
+}
+function renderInvRows(src){
+  const tb=$('invRows'); if(!tb) return;
+  const rows=(invAllList||[]).filter(i=> src==='all' || (i.source||'system').toLowerCase()===src);
+  tb.innerHTML = rows.length ? rows.map(i=>`<tr style="cursor:pointer" onclick="location.hash='#/investigations/${i.key}'">
       <td><div style="font-size:12px;color:var(--muted)">${i.key}${i.isDemo?' · DEMO':''}</div><div style="font-weight:600">${i.title}</div></td>
-      <td>${i.service}</td><td>${statusPill(i.status)}</td><td>${i.rootCause||'—'}</td><td>${i.confidence?i.confidence+'%':'—'}</td></tr>`).join('')}
-    </tbody></table></div>`;
+      <td>${rvSrc(i.source)}</td><td>${i.service}</td><td>${statusPill(i.status)}</td><td>${i.rootCause||'—'}</td><td>${i.confidence?i.confidence+'%':'—'}</td></tr>`).join('')
+    : `<tr><td colspan="6" class="muted" style="padding:20px 4px">No investigations from ${rvSrcLabel(src)} yet — they'll appear here when that tool sends a signal.</td></tr>`;
 }
 
 /* ---------- guided investigation (staged agent flow) ---------- */
