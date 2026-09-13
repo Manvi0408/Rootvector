@@ -23,7 +23,7 @@ export class IncidentsService {
   async event(incidentId: string, kind: string, message: string, data?: any) {
     // Link this event into the tamper-evident hash chain for the incident.
     const last = await this.prisma.incidentEvent.findFirst({
-      where: { incidentId }, orderBy: { at: 'desc' },
+      where: { incidentId }, orderBy: { seq: 'desc' },
     });
     const prevHash = last?.hash || GENESIS;
     const at = new Date();
@@ -38,7 +38,7 @@ export class IncidentsService {
   async verifyAudit(key: string, userId?: string) {
     const inc = await this.prisma.incident.findUnique({
       where: { key },
-      include: { events: { orderBy: { at: 'asc' } } },
+      include: { events: { orderBy: { seq: 'asc' } } },
     });
     if (!inc) throw new NotFoundException('Incident not found');
     if (userId && inc.userId && inc.userId !== userId) throw new NotFoundException('Incident not found');

@@ -21,6 +21,18 @@ export interface ChainEvent {
   at: Date | string;
 }
 
+/** Recursively sort object keys so serialization is stable regardless of
+ *  insertion order or JSON store (Postgres jsonb) key reordering. */
+function stable(v: any): any {
+  if (Array.isArray(v)) return v.map(stable);
+  if (v && typeof v === 'object') {
+    const o: any = {};
+    for (const k of Object.keys(v).sort()) o[k] = stable(v[k]);
+    return o;
+  }
+  return v;
+}
+
 /** Deterministic hash of one event, linked to the previous hash. */
 export function chainHash(prevHash: string, e: ChainEvent): string {
   const canon = JSON.stringify({
@@ -28,7 +40,7 @@ export function chainHash(prevHash: string, e: ChainEvent): string {
     i: e.incidentId,
     k: e.kind,
     m: e.message,
-    d: e.data ?? null,
+    d: e.data == null ? null : stable(e.data),
     a: new Date(e.at).toISOString(),
   });
   return crypto.createHash('sha256').update(canon).digest('hex');

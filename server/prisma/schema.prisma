@@ -73,6 +73,7 @@ model Incident {
 // Every step of an investigation is a real, persisted event (streamed to the UI).
 model IncidentEvent {
   id         String   @id @default(cuid())
+  seq        Int      @default(autoincrement()) @unique // strict creation order (chain ordering)
   incidentId String
   kind       String   // detected | investigation.step | evidence | hypothesis | root_cause | recommendation | approval.required | remediation | verification | resolved | security
   message    String

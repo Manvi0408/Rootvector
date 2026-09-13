@@ -1229,7 +1229,11 @@ function pageInvestigation(key){
   <div class="ip-frame"><div class="ip-inner">
     <div class="ip-head">
       <div><div class="ip-h1" id="ipTitle">Investigation</div><div class="ip-sub" id="ipSub">${key}</div></div>
-      <span class="ip-status proc" id="invStatus"><span class="ip-dot"></span> Investigating</span>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <span id="auditBadge"></span>
+        <button id="auditBtn" onclick="rvVerifyAudit('${key}')" title="Recompute the SHA-256 hash chain and confirm no event was altered" style="cursor:pointer;font-size:12px;font-weight:700;padding:7px 12px;border-radius:999px;border:1px solid #D9D6E4;background:#fff;color:#4A4560;display:inline-flex;align-items:center;gap:6px">🛡 Verify integrity</button>
+        <span class="ip-status proc" id="invStatus"><span class="ip-dot"></span> Investigating</span>
+      </div>
     </div>
     <div class="ip-grid">
       <section class="ip-col">
@@ -1307,6 +1311,21 @@ function confirmApprove(){
     </div></div>`;
   ov.addEventListener('click', ev=>{ if(ev.target===ov) ov.remove(); });
   document.body.appendChild(ov);
+}
+/* Verify the tamper-evident audit chain for this incident (calls the backend,
+   which recomputes SHA-256(prevHash+event) across every event). */
+async function rvVerifyAudit(key){
+  const btn=$('auditBtn'), badge=$('auditBadge');
+  if(btn){ btn.disabled=true; btn.textContent='Verifying…'; }
+  try{
+    const r=await (await rvApi('/incidents/'+key+'/audit')).json();
+    if(badge){
+      badge.innerHTML = r.intact
+        ? `<span style="font-size:12px;font-weight:700;color:#1F9D57;background:#E7F6EC;padding:7px 12px;border-radius:999px;display:inline-flex;align-items:center;gap:6px">✓ Tamper-evident · ${r.events} events · chain intact</span>`
+        : `<span style="font-size:12px;font-weight:700;color:#DC2626;background:#FDECEC;padding:7px 12px;border-radius:999px">⛔ Audit chain broken</span>`;
+    }
+  }catch(e){ if(badge) badge.innerHTML='<span style="font-size:12px;color:#DC2626">Verify failed</span>'; }
+  if(btn){ btn.disabled=false; btn.innerHTML='🛡 Verify integrity'; }
 }
 async function doApprove(key){
   const m=document.getElementById('invModal'); if(m) m.remove();
